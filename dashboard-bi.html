@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Dashboard BI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1A1A2E;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --background: #0F0F1A;
+            --surface: #1A1A2E;
+            --surface-light: #252542;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #2D2D4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--surface);
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .period-tabs {
+            display: flex;
+            background: var(--surface-light);
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .period-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-tab:hover {
+            color: var(--text);
+        }
+
+        .period-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .comparison {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--surface-light);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .comparison.positive {
+            color: var(--success);
+        }
+
+        .comparison.negative {
+            color: var(--danger);
+        }
+
+        .main-content {
+            padding: 25px 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .metric-icon.revenue { background: rgba(0, 200, 83, 0.15); }
+        .metric-icon.orders { background: rgba(0, 217, 255, 0.15); }
+        .metric-icon.ticket { background: rgba(255, 107, 53, 0.15); }
+        .metric-icon.time { background: rgba(255, 179, 0, 0.15); }
+
+        .metric-trend {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .metric-trend.up {
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--success);
+        }
+
+        .metric-trend.down {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .metric-card.revenue .metric-value { color: var(--success); }
+        .metric-card.orders .metric-value { color: var(--accent); }
+        .metric-card.ticket .metric-value { color: var(--primary); }
+        .metric-card.time .metric-value { color: var(--warning); }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .chart-wrapper {
+            height: 250px;
+            position: relative;
+        }
+
+        .donut-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .donut-chart {
+            width: 180px;
+            height: 180px;
+            flex-shrink: 0;
+        }
+
+        .donut-legend {
+            flex: 1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .legend-item:last-child {
+            border-bottom: none;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+
+        .legend-label {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .legend-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .lists-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .list-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .list-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .list-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface-light);
+            border-radius: 10px;
+        }
+
+        .list-rank {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .list-rank.gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+        .list-rank.silver { background: linear-gradient(135deg, #C0C0C0, #808080); color: #000; }
+        .list-rank.bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+        .list-rank.normal { background: var(--border); }
+
+        .list-info {
+            flex: 1;
+        }
+
+        .list-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .list-detail {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .list-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .table-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 25px;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .data-table th:hover {
+            color: var(--text);
+        }
+
+        .data-table td {
+            padding: 14px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-badge.finalizado {
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.aberto {
+            background: rgba(0, 217, 255, 0.15);
+            color: var(--accent);
+        }
+
+        .status-badge.cancelado {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .cashflow-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .cashflow-card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .cashflow-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin: 0 auto 12px;
+        }
+
+        .cashflow-icon.in { background: rgba(0, 200, 83, 0.15); }
+        .cashflow-icon.out { background: rgba(255, 23, 68, 0.15); }
+        .cashflow-icon.balance { background: rgba(0, 217, 255, 0.15); }
+
+        .cashflow-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .cashflow-label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .cashflow-card.in .cashflow-value { color: var(--success); }
+        .cashflow-card.out .cashflow-value { color: var(--danger); }
+        .cashflow-card.balance .cashflow-value { color: var(--accent); }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            padding: 12px 25px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .bottom-nav-btn {
+            padding: 12px 20px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bottom-nav-btn:hover {
+            background: var(--primary);
+        }
+
+        .main-content-padded {
+            padding-bottom: 100px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-muted);
+        }
+
+        .error-data {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1200px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .lists-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px; }
+            .header-left { flex-direction: column; align-items: flex-start; }
+            .header-right { flex-direction: column; align-items: flex-start; width: 100%; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .donut-wrapper { flex-direction: column; }
+            .cashflow-grid { grid-template-columns: 1fr; }
+            .period-tabs { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">BarFlow</span>
+            </div>
+            <h1 class="header-title">Dashboard BI</h1>
+        </div>
+        <div class="header-right">
+            <button onclick="location.href='menu.html'" style="background:var(--primary);color:white;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px;">🏠 Menu</button>
+            <div class="period-tabs">
+                <button class="period-tab active" data-period="today">Hoje</button>
+                <button class="period-tab" data-period="week">Semana</button>
+                <button class="period-tab" data-period="month">Mês</button>
+            </div>
+            <div class="comparison positive" id="comparison">
+                <span>↑</span>
+                <span>+12.5% vs período anterior</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content main-content-padded">
+        <div class="metrics-grid">
+            <div class="metric-card revenue">
+                <div class="metric-header">
+                    <div class="metric-icon revenue">💰</div>
+                    <span class="metric-trend up" id="revenue-trend">+12.5%</span>
+                </div>
+                <div class="metric-value" id="revenue-value">R$ 0,00</div>
+                <div class="metric-label">Faturamento Total</div>
+            </div>
+
+            <div class="metric-card orders">
+                <div class="metric-header">
+                    <div class="metric-icon orders">📋</div>
+                    <span class="metric-trend up" id="orders-trend">+8.2%</span>
+                </div>
+                <div class="metric-value" id="orders-value">0</div>
+                <div class="metric-label">Pedidos Realizados</div>
+            </div>
+
+            <div class="metric-card ticket">
+                <div class="metric-header">
+                    <div class="metric-icon ticket">🎫</div>
+                    <span class="metric-trend up" id="ticket-trend">+3.1%</span>
+                </div>
+                <div class="metric-value" id="ticket-value">R$ 0,00</div>
+                <div class="metric-label">Ticket Médio</div>
+            </div>
+
+            <div class="metric-card time">
+                <div class="metric-header">
+                    <div class="metric-icon time">⏱️</div>
+                    <span class="metric-trend down" id="time-trend">-5.2%</span>
+                </div>
+                <div class="metric-value" id="time-value">0 min</div>
+                <div class="metric-label">Tempo Médio Pedido</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">Faturamento por Dia</h3>
+                <div class="chart-wrapper">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="chart-title">Pedidos por Categoria</h3>
+                <div class="donut-wrapper">
+                    <div class="donut-chart">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="donut-legend" id="category-legend"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lists-grid">
+            <div class="list-card">
+                <h3 class="list-title">Top 5 Produtos</h3>
+                <div class="list-items" id="top-products"></div>
+            </div>
+
+            <div class="list-card">
+                <h3 class="list-title">Top 5 Clientes</h3>
+                <div class="list-items" id="top-clients"></div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <h3 class="table-title">Pedidos Hoje</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-sort="code">Código ↕</th>
+                        <th data-sort="hora">Hora ↕</th>
+                        <th data-sort="mesa">Mesa ↕</th>
+                        <th data-sort="valor">Valor ↕</th>
+                        <th data-sort="status">Status ↕</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-table"></tbody>
+            </table>
+        </div>
+
+        <div class="chart-card">
+            <h3 class="chart-title">Fluxo de Caixa</h3>
+            <div class="cashflow-grid" id="cashflow">
+                <div class="cashflow-card in">
+                    <div class="cashflow-icon in">⬇️</div>
+                    <div class="cashflow-value" id="cash-in">R$ 0,00</div>
+                    <div class="cashflow-label">Entradas</div>
+                </div>
+                <div class="cashflow-card out">
+                    <div class="cashflow-icon out">⬆️</div>
+                    <div class="cashflow-value" id="cash-out">R$ 0,00</div>
+                    <div class="cashflow-label">Saídas</div>
+                </div>
+                <div class="cashflow-card balance">
+                    <div class="cashflow-icon balance">💵</div>
+                    <div class="cashflow-value" id="cash-balance">R$ 0,00</div>
+                    <div class="cashflow-label">Saldo do Dia</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="bottom-nav-btn" onclick="location.href='index.html'">💳 PDV</button>
+        <button class="bottom-nav-btn" onclick="location.href='mesas.html'">🪑 Mesas</button>
+        <button class="bottom-nav-btn" onclick="location.href='kds.html'">👨‍🍳 Cozinha</button>
+        <button class="bottom-nav-btn" onclick="location.href='dashboard.html'">📊 Financeiro</button>
+    </nav>
+
+    <script>
+        const API_BASE = '/api';
+        let data = [];
+        let LOCAL_DATA = {
+            metrics: { faturamento: 12847, pedidos: 147, ticketMedio: 87.4, tempoMedio: 18 },
+            trends: { faturamento: 12.5, pedidos: 8.2, ticketMedio: 3.1, tempoMedio: -5.2 },
+            revenueChart: [4200, 5100, 4800, 6200, 7800, 12400, 9800],
+            categories: [
+                { nome: 'Bebidas', quantidade: 245, color: '#00D9FF' },
+                { nome: 'Lanches', quantidade: 189, color: '#FF6B35' },
+                { nome: 'Porções', quantidade: 156, color: '#00C853' },
+                { nome: 'Sobremesas', quantidade: 98, color: '#FFB300' },
+                { nome: 'Alcoólicas', quantidade: 87, color: '#9C27B0' }
+            ],
+            topProducts: [
+                { nome: 'Hambúrguer Bacon', quantidade: 89, valor: 2671 },
+                { nome: 'Batata Frita', quantidade: 76, valor: 1436 },
+                { nome: 'Cerveja Long Neck', quantidade: 64, valor: 826 },
+                { nome: 'Refrigerante Lata', quantidade: 58, valor: 400 },
+                { nome: 'Caipirinha', quantidade: 42, valor: 630 }
+            ],
+            topClients: [
+                { nome: 'Ana Costa', visitas: 45, total: 3240 },
+                { nome: 'Maria Santos', visitas: 38, total: 2890 },
+                { nome: 'João Pedro', visitas: 32, total: 2456 },
+                { nome: 'Carlos Lima', visitas: 28, total: 2100 },
+                { nome: 'Pedro Paulo', visitas: 24, total: 1875 }
+            ],
+            orders: [
+                { id: 'P001', hora: '12:34', mesa: 5, total: 156.00, status: 'finalizado' },
+                { id: 'P002', hora: '12:45', mesa: 3, total: 89.00, status: 'aberto' },
+                { id: 'P003', hora: '13:02', mesa: 8, total: 234.50, status: 'finalizado' },
+                { id: 'P004', hora: '13:15', mesa: 1, total: 67.00, status: 'finalizado' },
+                { id: 'P005', hora: '13:28', mesa: 6, total: 312.00, status: 'cancelado' }
+            ],
+            cashflow: { entradas: 18500, saidas: 3200, saldo: 15300 }
+        };
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_BASE}/dashboard`);
+                if (res.ok) {
+                    const d = await res.json();
+                    if (d && Object.keys(d).length > 0) { data = d; return; }
+                }
+            } catch (e) { console.log('API offline'); }
+            data = LOCAL_DATA;
+        }
+
+        let currentPeriod = 'today';
+        let sortColumn = 'hora';
+        let sortDir = 'desc';
+        let dashboardData = null;
+        let ordersData = [];
+
+        const formatCurrency = (value) => 'R$ ' + (Number(value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatNumber = (value) => (Number(value) || 0).toLocaleString('pt-BR');
+
+        const defaultData = {
+            metrics: { faturamento: 12847, pedidos: 147, ticketMedio: 87.4, tempoMedio: 18 },
+            trends: { faturamento: 12.5, pedidos: 8.2, ticketMedio: 3.1, tempoMedio: -5.2 },
+            revenueChart: [4200, 5100, 4800, 6200, 7800, 12400, 9800],
+            categories: [
+                { nome: 'Bebidas', quantidade: 245, color: '#00D9FF' },
+                { nome: 'Lanches', quantidade: 189, color: '#FF6B35' },
+                { nome: 'Porções', quantidade: 156, color: '#00C853' },
+                { nome: 'Sobremesas', quantidade: 98, color: '#FFB300' },
+                { nome: 'Alcoólicas', quantidade: 87, color: '#9C27B0' }
+            ],
+            topProducts: [
+                { nome: 'Hambúrguer Bacon', quantidade: 89, valor: 2671 },
+                { nome: 'Batata Frita', quantidade: 76, valor: 1436 },
+                { nome: 'Cerveja Long Neck', quantidade: 64, valor: 826 },
+                { nome: 'Refrigerante Lata', quantidade: 58, valor: 400 },
+                { nome: 'Caipirinha', quantidade: 42, valor: 630 }
+            ],
+            topClients: [
+                { nome: 'Ana Costa', visitas: 45, total: 3240 },
+                { nome: 'Maria Santos', visitas: 38, total: 2890 },
+                { nome: 'João Pedro', visitas: 32, total: 2456 },
+                { nome: 'Carlos Lima', visitas: 28, total: 2100 },
+                { nome: 'Pedro Paulo', visitas: 24, total: 1875 }
+            ],
+            orders: [
+                { id: 'P001', hora: '12:34', mesa: 5, total: 156.00, status: 'finalizado' },
+                { id: 'P002', hora: '12:45', mesa: 3, total: 89.00, status: 'aberto' },
+                { id: 'P003', hora: '13:02', mesa: 8, total: 234.50, status: 'finalizado' },
+                { id: 'P004', hora: '13:15', mesa: 1, total: 67.00, status: 'finalizado' },
+                { id: 'P005', hora: '13:28', mesa: 6, total: 312.00, status: 'cancelado' }
+            ],
+            cashflow: { entradas: 18500, saidas: 3200, saldo: 15300 }
+        };
+
+        async function loadDashboard() {
+            await loadData();
+            dashboardData = data;
+            if (dashboardData && dashboardData.orders) {
+                ordersData = dashboardData.orders;
+            } else if (dashboardData && dashboardData.ultimosPedidos) {
+                ordersData = dashboardData.ultimosPedidos;
+            } else {
+                ordersData = LOCAL_DATA.orders;
+            }
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            const data = dashboardData || defaultData;
+            
+            document.getElementById('revenue-value').textContent = formatCurrency(data.metrics?.faturamento || data.faturamentoChart?.[6] || 12847);
+            document.getElementById('orders-value').textContent = formatNumber(data.metrics?.pedidos || 147);
+            document.getElementById('ticket-value').textContent = formatCurrency(data.metrics?.ticketMedio || 87.4);
+            document.getElementById('time-value').textContent = (data.metrics?.tempoMedio || 18) + ' min';
+
+            updateTrends(data.trends);
+            renderRevenueChart(data.revenueChart);
+            renderCategoryChart(data.categories);
+            renderTopProducts(data.topProducts);
+            renderTopClients(data.topClients);
+            renderOrdersTable(ordersData);
+            renderCashflow(data.cashflow);
+        }
+
+        function updateTrends(trends) {
+            const el = (id, val) => {
+                const el = document.getElementById(id);
+                const v = Number(val);
+                el.textContent = (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+                el.className = 'metric-trend ' + (v >= 0 ? 'up' : 'down');
+            };
+            el('revenue-trend', trends?.faturamento || 12.5);
+            el('orders-trend', trends?.pedidos || 8.2);
+            el('ticket-trend', trends?.ticketMedio || 3.1);
+            el('time-trend', trends?.tempoMedio || -5.2);
+        }
+
+        let revenueChartInstance = null;
+        function renderRevenueChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChartInstance) revenueChartInstance.destroy();
+
+            revenueChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Faturamento',
+                        data: data || defaultData.revenueChart,
+                        backgroundColor: 'rgba(255, 107, 53, 0.8)',
+                        borderColor: '#FF6B35',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1A1A2E',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#2D2D4A',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: (ctx) => 'R$ ' + ctx.raw.toLocaleString('pt-BR')
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9E9EB8' }
+                        },
+                        y: {
+                            grid: { color: '#2D2D4A' },
+                            ticks: {
+                                color: '#9E9EB8',
+                                callback: (v) => 'R$ ' + (v/1000) + 'k'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        let categoryChartInstance = null;
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            const colors = data?.map(c => c.color) || defaultData.categories.map(c => c.color);
+            const values = data?.map(c => c.quantidade) || defaultData.categories.map(c => c.quantidade);
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data?.map(c => c.nome) || defaultData.categories.map(c => c.nome),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1A1A2E',
+                            titleColor: '#fff',
+                            bodyColor: '#fff'
+                        }
+                    }
+                }
+            });
+
+            renderCategoryLegend(data || defaultData.categories);
+        }
+
+        function renderCategoryLegend(data) {
+            const container = document.getElementById('category-legend');
+            const total = data.reduce((sum, c) => sum + c.quantidade, 0);
+            container.innerHTML = data.map(c => `
+                <div class="legend-item">
+                    <span class="legend-label">
+                        <span class="legend-color" style="background: ${c.color}"></span>
+                        ${c.nome}
+                    </span>
+                    <span class="legend-value">${c.quantidade} (${Math.round(c.quantidade/total*100)}%)</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTopProducts(products) {
+            const container = document.getElementById('top-products');
+            const ranks = ['gold', 'silver', 'bronze', 'normal', 'normal'];
+            container.innerHTML = (products || defaultData.topProducts).map((p, i) => `
+                <div class="list-item">
+                    <div class="list-rank ${ranks[i]}">${i + 1}</div>
+                    <div class="list-info">
+                        <div class="list-name">${p.nome}</div>
+                        <div class="list-detail">${p.quantidade} unidades</div>
+                    </div>
+                    <div class="list-value">${formatCurrency(p.valor)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderTopClients(clients) {
+            const container = document.getElementById('top-clients');
+            const ranks = ['gold', 'silver', 'bronze', 'normal', 'normal'];
+            container.innerHTML = (clients || defaultData.topClients).map((c, i) => `
+                <div class="list-item">
+                    <div class="list-rank ${ranks[i]}">${i + 1}</div>
+                    <div class="list-info">
+                        <div class="list-name">${c.nome}</div>
+                        <div class="list-detail">${c.visitas} visitas</div>
+                    </div>
+                    <div class="list-value">${formatCurrency(c.total)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderOrdersTable(orders) {
+            const container = document.getElementById('orders-table');
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum pedido hoje</td></tr>';
+                return;
+            }
+
+            const sorted = [...orders].sort((a, b) => {
+                let aVal = a[sortColumn], bVal = b[sortColumn];
+                if (sortColumn === 'valor') { aVal = Number(aVal); bVal = Number(bVal); }
+                return sortDir === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+            });
+
+            container.innerHTML = sorted.map(o => `
+                <tr>
+                    <td>${o.id || o.codigo || 'P000'}</td>
+                    <td>${o.hora || o.created_at?.split(' ')[1]?.substring(0,5) || '--:--'}</td>
+                    <td>Mesa ${o.mesa || o.mesa_numero || '-'}</td>
+                    <td style="font-weight: 600; color: var(--success);">${formatCurrency(o.total || 0)}</td>
+                    <td><span class="status-badge ${o.status}">${o.status || 'aberto'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCashflow(data) {
+            document.getElementById('cash-in').textContent = formatCurrency(data?.entradas || 18500);
+            document.getElementById('cash-out').textContent = formatCurrency(data?.saidas || 3200);
+            document.getElementById('cash-balance').textContent = formatCurrency(data?.saldo || 15300);
+        }
+
+        document.querySelectorAll('.period-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentPeriod = tab.dataset.period;
+                loadDashboard();
+            });
+        });
+
+        document.querySelectorAll('.data-table th').forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.sort;
+                if (sortColumn === col) {
+                    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = col;
+                    sortDir = 'desc';
+                }
+                renderOrdersTable(ordersData);
+            });
+        });
+
+        loadDashboard();
+    </script>
+
+    <footer style="text-align: center; padding: 15px; background: var(--surface); color: var(--text-muted); font-size: 11px; border-top: 1px solid var(--border);">
+        <span style="opacity: 0.6;">Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </footer>
+</body>
+</html>

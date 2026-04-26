@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Receitas</title>
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --primary-dark: #e55a2b;
+            --success: #00c853;
+            --warning: #ff9100;
+            --danger: #ff1744;
+            --surface: #fff;
+            --background: #f5f5f5;
+            --text: #333;
+            --text-muted: #666;
+            --border: #ddd;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--background); color: var(--text); }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; }
+        .header-btn {
+            background: white;
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            padding: 10px;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: var(--background);
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .section {
+            padding: 15px;
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .ingredients-list {
+            margin-top: 10px;
+        }
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--background);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .ingredient-info { flex: 1; }
+        .ingredient-name { font-weight: 600; }
+        .ingredient-qty { font-size: 14px; color: var(--text-muted); }
+        .ingredient-cost { font-weight: bold; color: var(--success); }
+        .ingredient-delete {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: var(--danger);
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .cost-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .cost-box {
+            background: var(--background);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .cost-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .cost-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .margin-box {
+            background: linear-gradient(135deg, var(--success), #00a843);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .margin-value { font-size: 28px; font-weight: bold; }
+        .margin-label { font-size: 12px; opacity: 0.9; }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn-add {
+            padding: 10px 20px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .recipes-list {
+            display: grid;
+            gap: 10px;
+        }
+        .recipe-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+        .recipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .recipe-name { font-weight: bold; font-size: 18px; }
+        .recipe-cost { 
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .recipe-ingredients {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .recipe-pricing {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: var(--surface);
+            color: var(--text-muted);
+            font-size: 11px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>📝 Receitas</h1>
+        <button class="header-btn" onclick="location.href='menu.html'">🏠 Menu</button>
+    </header>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="nova">➕ Nova Receita</button>
+        <button class="tab" data-tab="listar">📋 Listar</button>
+    </div>
+    
+    <div id="nova-receita" class="section">
+        <div class="card">
+            <div class="card-title">
+                Dados do Prato
+                <button class="btn-add" onclick="limpar()">🗑️ Limpar</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Nome do Prato</label>
+                <input type="text" class="form-input" id="prato-nome" placeholder="Ex: Hambúrguer Artesanal">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Categoria</label>
+                <select class="form-select" id="prato-categoria">
+                    <option value="lanches">🍔 Lanches</option>
+                    <option value="pizzas">🍕 Pizzas</option>
+                    <option value="bebidas">🥤 Bebidas</option>
+                    <option value="sobremesas">🍰 Sobremesas</option>
+                    <option value="acompanhamentos">🍟 Acompanhamentos</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                Ingredientes
+                <span style="font-weight: normal; font-size: 14px; color: var(--text-muted);">(Custo: R$ <span id="custo-total">0,00</span>)</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Ingrediente</label>
+                <select class="form-select" id="ingrediente">
+                    <option value="">Selecione...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Quantidade</label>
+                <input type="number" class="form-input" id="ingrediente-qty" placeholder="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Unidade</label>
+                <select class="form-select" id="ingrediente-unidade">
+                    <option value="g">g (gramas)</option>
+                    <option value="ml">ml (mililitros)</option>
+                    <option value="un">un (unidade)</option>
+                </select>
+            </div>
+            
+            <button class="btn-add" onclick="adicionarIngrediente()">➕ Adicionar</button>
+            
+            <div class="ingredients-list" id="ingredients-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Nenhum ingrediente adicionado
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">Cálculo de Preço</div>
+            
+            <div class="cost-summary">
+                <div class="cost-box">
+                    <div class="cost-value" id="custo-prato">R$ 0,00</div>
+                    <div class="cost-label">Custo Total</div>
+                </div>
+                <div class="cost-box">
+                    <div class="cost-value">
+                        <input type="number" id="margem" value="50" style="width: 60px; text-align: center; border: 2px solid var(--primary); border-radius: 8px; font-size: 20px; font-weight: bold;" onchange="calcularPreco()">%
+                    </div>
+                    <div class="cost-label">Margem</div>
+                </div>
+            </div>
+            
+            <div class="margin-box" style="margin-top: 15px;">
+                <div class="margin-value" id="preco-venda">R$ 0,00</div>
+                <div class="margin-label">Preço de Venda Sugerido</div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <input type="number" class="form-input" id="preco-manual" placeholder="Preço manual">
+                <button class="btn-primary" style="margin-top: 0; width: auto;" onclick="salvarPrato()">💾 Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="listar-receitas" class="section" style="display: none;">
+        <div class="card">
+            <div class="card-title">Receitas Cadastradas</div>
+            
+            <div class="recipes-list" id="recipes-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Nenhuma receita salva
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <span>Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </footer>
+
+    <script>
+        const API_BASE = '/api';
+        
+        let ingredients = [];
+        let recipes = [];
+        let custoTotal = 0;
+        
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.getElementById('nova-receita').style.display = tab.dataset.tab === 'nova' ? 'block' : 'none';
+                document.getElementById('listar-receitas').style.display = tab.dataset.tab === 'listar' ? 'block' : 'none';
+                
+                if (tab.dataset.tab === 'listar') renderRecipes();
+            });
+        });
+        
+        async function loadIngredients() {
+            try {
+                const res = await fetch(API_BASE + '/produtos');
+                const produtos = await res.json();
+                const select = document.getElementById('ingrediente');
+                select.innerHTML = '<option value="">Selecione...</option>' + 
+                    produtos.map(p => `<option value="${p.id}|${p.nome}|${p.preco || 0}|${p.unidade || 'un'}">${p.nome} (R$ ${(p.preco || 0).toFixed(2)})</option>`).join('');
+            } catch (e) {
+                console.log('Erro:', e);
+            }
+        }
+        
+        function adicionarIngrediente() {
+            const select = document.getElementById('ingrediente');
+            const qty = parseFloat(document.getElementById('ingrediente-qty').value) || 0;
+            
+            if (!select.value || qty === 0) {
+                alert('Selecione ingrediente e quantidade!');
+                return;
+            }
+            
+            const [id, nome, preco, unidade] = select.value.split('|');
+            
+            // Calcular custo baseado na unidade
+            let custo = 0;
+            if ((unidade === 'g' || unidade === 'ml') && document.getElementById('ingrediente-unidade').value === 'un') {
+                custo = preco * qty;
+            } else {
+                custo = preco * qty;
+            }
+            
+            const ingredient = {
+                id,
+                nome,
+                qty,
+                unidade: document.getElementById('ingrediente-unidade').value,
+                custo: custo
+            };
+            
+            ingredients.push(ingredient);
+            renderIngredients();
+            
+            // Reset
+            document.getElementById('ingrediente').value = '';
+            document.getElementById('ingrediente-qty').value = '';
+        }
+        
+        function renderIngredients() {
+            const list = document.getElementById('ingredients-list');
+            custoTotal = ingredients.reduce((s, i) => s + i.custo, 0);
+            
+            document.getElementById('custo-total').textContent = custoTotal.toFixed(2);
+            document.getElementById('custo-prato').textContent = 'R$ ' + custoTotal.toFixed(2);
+            
+            calcularPreco();
+            
+            if (ingredients.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum ingrediente adicionado</div>';
+                return;
+            }
+            
+            list.innerHTML = ingredients.map((i, idx) => `
+                <div class="ingredient-item">
+                    <div class="ingredient-info">
+                        <div class="ingredient-name">${i.nome}</div>
+                        <div class="ingredient-qty">${i.qty} ${i.unidade}</div>
+                    </div>
+                    <div class="ingredient-cost">R$ ${i.custo.toFixed(2).replace('.', ',')}</div>
+                    <button class="ingredient-delete" onclick="removerIngrediente(${idx})">×</button>
+                </div>
+            `).join('');
+        }
+        
+        function removerIngrediente(idx) {
+            ingredients.splice(idx, 1);
+            renderIngredients();
+        }
+        
+        function calcularPreco() {
+            const custo = custoTotal;
+            const margem = parseFloat(document.getElementById('margem').value) || 50;
+            
+            // Preço = custo / (1 - margem/100)
+            const preco = custo / (1 - margem / 100);
+            
+            document.getElementById('preco-venda').textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
+        }
+        
+        function salvarPrato() {
+            const nome = document.getElementById('prato-nome').value;
+            const categoria = document.getElementById('prato-categoria').value;
+            const preco = parseFloat(document.getElementById('preco-manual').value) || parseFloat(document.getElementById('preco-venda').textContent.replace('R$ ', ''));
+            
+            if (!nome || ingredients.length === 0) {
+                alert('Preencha o nome e adicione ingredientes!');
+                return;
+            }
+            
+            const recipe = {
+                id: Date.now(),
+                nome,
+                categoria,
+                custo: custoTotal,
+                preco,
+                ingredients: [...ingredients]
+            };
+            
+            recipes.push(recipe);
+            
+            alert('Receita salva! 💾\n\nCusto: R$ ' + custoTotal.toFixed(2) + '\nPreço: R$ ' + preco.toFixed(2));
+            
+            limpar();
+        }
+        
+        function renderRecipes() {
+            const list = document.getElementById('recipes-list');
+            
+            if (recipes.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma receita salva</div>';
+                return;
+            }
+            
+            list.innerHTML = recipes.map(r => `
+                <div class="recipe-card">
+                    <div class="recipe-header">
+                        <div class="recipe-name">${r.nome}</div>
+                        <div class="recipe-cost">R$ ${r.preco.toFixed(2)}</div>
+                    </div>
+                    <div class="recipe-ingredients">${r.ingredients.map(i => i.nome).join(', ')}</div>
+                    <div class="recipe-pricing">
+                        <span>Custo: R$ ${r.custo.toFixed(2)}</span>
+                        <span>Margem: ${((r.preco - r.custo) / r.preco * 100).toFixed(0)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function limpar() {
+            document.getElementById('prato-nome').value = '';
+            document.getElementById('preco-manual').value = '';
+            ingredients = [];
+            custoTotal = 0;
+            renderIngredients();
+            document.getElementById('margem').value = 50;
+            document.getElementById('preco-venda').textContent = 'R$ 0,00';
+        }
+        
+        // Enter key
+        document.getElementById('ingrediente-qty').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') adicionarIngrediente();
+        });
+        
+        loadIngredients();
+    </script>
+</body>
+</html>

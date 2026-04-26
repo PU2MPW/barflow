@@ -1,0 +1,61 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const categorias = getCollection('categorias');
+        
+        if (method === 'GET') {
+            const sorted = [...categorias].sort((a, b) => {
+                const ordA = a.ordem || 0;
+                const ordB = b.ordem || 0;
+                if (ordA !== ordB) return ordA - ordB;
+                return (a.nome || '').localeCompare(b.nome || '');
+            });
+            return res.json(sorted);
+        }
+        
+        if (method === 'POST') {
+            const { nome, icone, ordem } = body;
+            if (!nome) return res.status(400).json({ error: 'nome obrigatorio' });
+            
+            const maxOrdem = categorias.length > 0 ? Math.max(...categorias.map(c => c.ordem || 0)) + 1 : 1;
+            const newId = categorias.length > 0 ? Math.max(...categorias.map(c => c.id)) + 1 : 1;
+            const newCategoria = { id: newId, nome, icone: icone || '🍽️', ordem: ordem || maxOrdem };
+            categorias.push(newCategoria);
+            
+            return res.status(201).json({ id: newId, message: 'Categoria criada' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = categorias.findIndex(c => c.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Categoria nao encontrada' });
+            
+            if (body.nome !== undefined) categorias[index].nome = body.nome;
+            if (body.icone !== undefined) categorias[index].icone = body.icone;
+            if (body.ordem !== undefined) categorias[index].ordem = body.ordem;
+            
+            return res.json({ message: 'Categoria atualizada' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = categorias.findIndex(c => c.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Categoria nao encontrada' });
+            
+            categorias.splice(index, 1);
+            return res.json({ message: 'Categoria deletada' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

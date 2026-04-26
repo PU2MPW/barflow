@@ -1,0 +1,128 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    const db = getDb();
+    const produtos = getCollection('produtos');
+    const categorias = getCollection('categorias');
+    const estoque_movimentos = getCollection('estoque_movimentos');
+
+    try {
+        if (method === 'GET' && !query.id && !query.produto_id) {
+            const { categoria, apenasBaixo } = query;
+            let resultados = produtos.filter(p => p.ativo === 1 && p.controla_estoque === 1);
+            
+            if (apenasBaixo === 'true') {
+                resultados = resultados.filter(p => (p.estoque_atual || 0) <= (p.estoque_minimo || 0));
+            }
+            if (categoria) {
+                resultados = resultados.filter(p => p.categoria_id == categoria);
+            }
+            
+            resultados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            
+            const resultadosComCategoria = resultados.map(p => {
+                const cat = categorias.find(c => c.id === p.categoria_id);
+                return { ...p, categoria_nome: cat?.nome || null, categoria_icone: cat?.icone || null };
+            });
+            return res.json(resultadosComCategoria);
+        }
+
+        if (method === 'GET' && query.alertas) {
+            const alertas = produtos.filter(p => 
+                p.ativo === 1 && p.controla_estoque === 1 && (p.estoque_atual || 0) <= (p.estoque_minimo || 0)
+            ).map(p => {
+                const cat = categorias.find(c => c.id === p.categoria_id);
+                return { ...p, categoria_nome: cat?.nome || null };
+            }).sort((a, b) => (a.estoque_atual || 0) - (b.estoque_atual || 0));
+            return res.json(alertas);
+        }
+
+        if (method === 'GET' && query.historico) {
+            const { produto_id, tipo, limite } = query;
+            let resultados = [...estoque_movimentos];
+            
+            if (produto_id) resultados = resultados.filter(e => e.produto_id == produto_id);
+            if (tipo) resultados = resultados.filter(e => e.tipo === tipo);
+            
+            resultados.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const limiteNum = parseInt(limite) || 50;
+            const resultadosComProduto = resultados.slice(0, limiteNum).map(e => {
+                const prod = produtos.find(p => p.id === e.produto_id);
+                return { ...e, produto_nome: prod?.nome || null };
+            });
+            return res.json(resultadosComProduto);
+        }
+
+        if (method === 'POST' && query.entrada) {
+            const { produto_id, quantidade, motivo, operador_id } = body;
+            if (!produto_id || !quantidade || quantidade <= 0) {
+                return res.status(400).json({ error: 'produto_id e quantidade obrigatorios' });
+            }
+
+            const index = produtos.findIndex(p => p.id === produto_id);
+            if (index === -1 || !produtos[index].controla_estoque) {
+                return res.status(400).json({ error: 'Produto nao encontrado ou sem controle de estoque' });
+            }
+
+            const newId = estoque_movimentos.length > 0 ? Math.max(...estoque_movimentos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            estoque_movimentos.push({ id: newId, produto_id, tipo: 'entrada', quantidade, motivo: motivo || '', operador_id: operador_id || null, created_at: now });
+            
+            produtos[index].estoque_atual = (produtos[index].estoque_atual || 0) + quantidade;
+
+            return res.json({ success: true, tipo: 'entrada', quantidade });
+        }
+
+        if (method === 'POST' && query.saida) {
+            const { produto_id, quantidade, motivo, operador_id } = body;
+            if (!produto_id || !quantidade || quantidade <= 0) {
+                return res.status(400).json({ error: 'produto_id e quantidade obrigatorios' });
+            }
+
+            const index = produtos.findIndex(p => p.id === produto_id);
+            if (index === -1 || !produtos[index].controla_estoque) {
+                return res.status(400).json({ error: 'Produto nao encontrado ou sem controle de estoque' });
+            }
+            if ((produtos[index].estoque_atual || 0) < quantidade) {
+                return res.status(400).json({ error: `Estoque insuficiente. Disponivel: ${produtos[index].estoque_atual}` });
+            }
+
+            const newId = estoque_movimentos.length > 0 ? Math.max(...estoque_movimentos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            estoque_movimentos.push({ id: newId, produto_id, tipo: 'saida', quantidade, motivo: motivo || '', operador_id: operador_id || null, created_at: now });
+            
+            produtos[index].estoque_atual = produtos[index].estoque_atual - quantidade;
+
+            return res.json({ success: true, tipo: 'saida', quantidade });
+        }
+
+        if (method === 'POST' && query.ajuste) {
+            const { produto_id, nova_quantidade, motivo, operador_id } = body;
+            if (!produto_id || nova_quantidade === undefined || nova_quantidade < 0) {
+                return res.status(400).json({ error: 'produto_id e nova_quantidade obrigatorios' });
+            }
+
+            const index = produtos.findIndex(p => p.id === produto_id);
+            if (index === -1 || !produtos[index].controla_estoque) {
+                return res.status(400).json({ error: 'Produto nao encontrado ou sem controle de estoque' });
+            }
+
+            const diferenca = nova_quantidade - (produtos[index].estoque_atual || 0);
+            const tipo = diferenca >= 0 ? 'entrada' : 'saida';
+
+            const newId = estoque_movimentos.length > 0 ? Math.max(...estoque_movimentos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            estoque_movimentos.push({ id: newId, produto_id, tipo: 'ajuste', quantidade: Math.abs(diferenca), motivo: motivo || 'Ajuste de inventario', operador_id: operador_id || null, created_at: now });
+            
+            produtos[index].estoque_atual = nova_quantidade;
+
+            return res.json({ success: true, tipo: 'ajuste', nova_quantidade, diferenca });
+        }
+
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

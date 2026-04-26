@@ -1,0 +1,82 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const pedido_itens = getCollection('pedido_itens');
+        const pedidos = getCollection('pedidos');
+        
+        if (method === 'GET') {
+            const pedidoId = parseInt(query.pedido_id);
+            const itens = pedido_itens.filter(i => i.pedido_id === pedidoId);
+            return res.json(itens);
+        }
+        
+        if (method === 'POST') {
+            const pedido_id = parseInt(query.pedido_id);
+            if (!pedido_id) return res.status(400).json({ error: 'pedido_id obrigatorio' });
+            
+            const { produto_id, quantidade, preco_unitario } = body;
+            if (!produto_id || !quantidade || preco_unitario === undefined) {
+                return res.status(400).json({ error: 'produto_id, quantidade e preco_unitario obrigatorios' });
+            }
+            
+            const newId = pedido_itens.length > 0 ? Math.max(...pedido_itens.map(i => i.id)) + 1 : 1;
+            pedido_itens.push({ id: newId, pedido_id, produto_id, quantidade, preco_unitario });
+            
+            const pedidoIdx = pedidos.findIndex(p => p.id === pedido_id);
+            if (pedidoIdx !== -1) {
+                const total = pedido_itens.filter(i => i.pedido_id === pedido_id).reduce((sum, i) => sum + (i.quantidade * i.preco_unitario), 0);
+                pedidos[pedidoIdx].total = total;
+            }
+            
+            return res.status(201).json({ id: newId, total, message: 'Item adicionado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = pedido_itens.findIndex(i => i.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Item nao encontrado' });
+            
+            if (body.quantidade !== undefined) pedido_itens[index].quantidade = body.quantidade;
+            if (body.preco_unitario !== undefined) pedido_itens[index].preco_unitario = body.preco_unitario;
+            
+            const item = pedido_itens[index];
+            const total = pedido_itens.filter(i => i.pedido_id === item.pedido_id).reduce((sum, i) => sum + (i.quantidade * i.preco_unitario), 0);
+            
+            const pedidoIdx = pedidos.findIndex(p => p.id === item.pedido_id);
+            if (pedidoIdx !== -1) {
+                pedidos[pedidoIdx].total = total;
+            }
+            
+            return res.json({ total, message: 'Item atualizado' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = pedido_itens.findIndex(i => i.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Item nao encontrado' });
+            
+            const pedido_id = pedido_itens[index].pedido_id;
+            pedido_itens.splice(index, 1);
+            
+            const pedidoIdx = pedidos.findIndex(p => p.id === pedido_id);
+            if (pedidoIdx !== -1) {
+                const total = pedido_itens.filter(i => i.pedido_id === pedido_id).reduce((sum, i) => sum + (i.quantidade * i.preco_unitario), 0);
+                pedidos[pedidoIdx].total = total || 0;
+            }
+            
+            return res.json({ message: 'Item removido' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

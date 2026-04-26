@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Delivery Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1A1A2E;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --warning-light: #FFCA28;
+            --danger: #FF1744;
+            --info: #2196F3;
+            --background: #0F0F1A;
+            --surface: #1A1A2E;
+            --surface-light: #252542;
+            --surface-lighter: #2F2F52;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #2D2D4A;
+            --gold: #FFD700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background: var(--background); color: var(--text); min-height: 100vh; }
+
+        .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border);
+            gap: 20px;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 15px; }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+        .header-stats { display: flex; gap: 15px; }
+
+        .header-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 20px;
+            background: var(--surface-light);
+            border-radius: 12px;
+            min-width: 100px;
+        }
+
+        .header-stat-value { font-size: 22px; font-weight: 700; }
+        .header-stat-value.orders { color: var(--accent); }
+        .header-stat-value.revenue { color: var(--success); }
+        .header-stat-value.time { color: var(--warning); }
+        .header-stat-value.delivery { color: var(--info); }
+
+        .header-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        .header-actions button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-settings {
+            background: var(--surface-light);
+            color: var(--text);
+        }
+
+        .btn-settings:hover { background: var(--border); }
+
+        /* Main Layout */
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+        /* Sidebar Entregadores */
+        .sidebar-delivery {
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 { font-size: 16px; font-weight: 700; }
+        .sidebar-header h3 span { color: var(--primary); }
+
+        .btn-add-delivery {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delivery-list { flex: 1; overflow-y: auto; padding: 15px; }
+
+        .delivery-person {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .delivery-person:hover { border-color: var(--primary); }
+        .delivery-person.selected { border-color: var(--accent); background: var(--surface-lighter); }
+
+        .delivery-person-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .delivery-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .delivery-info { flex: 1; }
+        .delivery-name { font-size: 14px; font-weight: 600; }
+        .delivery-phone { font-size: 12px; color: var(--text-muted); }
+
+        .delivery-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .delivery-status.available { background: rgba(0,200,83,0.2); color: var(--success); }
+        .delivery-status.delivering { background: rgba(33,150,243,0.2); color: var(--info); }
+        .delivery-status.offline { background: rgba(158,158,184,0.2); color: var(--text-muted); }
+
+        .delivery-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .delivery-stat { text-align: center; }
+        .delivery-stat-value { font-size: 16px; font-weight: 700; }
+        .delivery-stat-label { font-size: 10px; color: var(--text-muted); }
+
+        /* Content Area */
+        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Tabs */
+        .tabs-container {
+            background: var(--surface);
+            padding: 15px 25px 0;
+            display: flex;
+            gap: 5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 12px 25px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab:hover { color: var(--text); background: var(--surface-light); }
+
+        .tab.active {
+            color: var(--primary);
+            background: var(--surface-light);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-count {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: var(--border);
+        }
+
+        .tab.active .tab-count { background: var(--primary); }
+
+        .tab.has-urgent .tab-count { background: var(--danger); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Kanban Board */
+        .kanban-container {
+            flex: 1;
+            overflow-x: auto;
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .kanban-column {
+            min-width: 280px;
+            max-width: 280px;
+            background: var(--surface);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .kanban-column-header {
+            padding: 15px 18px;
+            background: var(--surface-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kanban-column-title {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .kanban-column-count {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--border);
+        }
+
+        .kanban-column-title.pending { color: var(--warning); }
+        .kanban-column-title.preparing { color: var(--primary); }
+        .kanban-column-title.ready { color: var(--success); }
+        .kanban-column-title.delivering { color: var(--info); }
+        .kanban-column-title.delivered { color: var(--text-muted); }
+
+        .kanban-orders {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 300px;
+        }
+
+        /* Order Card */
+        .order-card {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .order-card.pending { border-left-color: var(--warning); }
+        .order-card.preparing { border-left-color: var(--primary); }
+        .order-card.ready { border-left-color: var(--success); }
+        .order-card.delivering { border-left-color: var(--info); }
+        .order-card.delivered { border-left-color: var(--text-muted); }
+
+        .order-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .order-id {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .order-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .order-badge.delivery { background: var(--primary); }
+        .order-badge.ifood { background: #EA1D2C; }
+        .order-badge.rappi { background: #FF6000; }
+        .order-badge.uber { background: #06C167; }
+
+        .order-client {
+            margin-bottom: 10px;
+        }
+
+        .order-client-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .order-client-phone {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .order-items-list {
+            margin-bottom: 10px;
+        }
+
+        .order-item-line {
+            font-size: 12px;
+            padding: 4px 0;
+            color: var(--text-muted);
+        }
+
+        .order-item-line strong { color: var(--text); }
+
+        .order-address {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 8px;
+            background: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .order-address-icon { flex-shrink: 0; }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        .order-time {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .order-time.urgent { color: var(--danger); font-weight: 600; }
+
+        .order-total {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .order-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .order-btn.accept { background: var(--success); color: white; }
+        .order-btn.preparing { background: var(--primary); color: white; }
+        .order-btn.ready { background: var(--accent); color: var(--secondary); }
+        .order-btn.deliver { background: var(--info); color: white; }
+        .order-btn.print { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .order-btn.assign { background: var(--warning); color: var(--secondary); }
+
+        .order-btn:hover { transform: scale(1.02); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active .modal { transform: scale(1); }
+
+        .modal-header {
+            padding: 20px 25px;
+            background: var(--surface-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title { font-size: 20px; font-weight: 700; }
+        .modal-title span { color: var(--primary); }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover { background: var(--danger); }
+
+        .modal-body { padding: 25px; overflow-y: auto; max-height: 60vh; }
+
+        .detail-section { margin-bottom: 25px; }
+        .detail-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-client {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--surface-light);
+            border-radius: 12px;
+        }
+
+        .detail-client-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .detail-client-info h4 { font-size: 18px; margin-bottom: 5px; }
+        .detail-client-info p { font-size: 14px; color: var(--text-muted); }
+
+        .detail-items { background: var(--surface-light); border-radius: 12px; overflow: hidden; }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-item:last-child { border-bottom: none; }
+        .detail-item-name { font-size: 14px; }
+        .detail-item-qty { font-size: 14px; color: var(--primary); font-weight: 600; }
+        .detail-item-price { font-size: 14px; color: var(--success); font-weight: 600; }
+
+        .detail-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: var(--surface);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .detail-total-value { color: var(--success); }
+
+        .detail-observation {
+            padding: 15px;
+            background: var(--warning);
+            color: var(--secondary);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .detail-delivery-person {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--surface-light);
+            border-radius: 12px;
+        }
+
+        .detail-delivery-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--info), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 12px;
+            padding: 20px 25px;
+            background: var(--surface-light);
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .detail-btn.primary { background: var(--primary); color: white; }
+        .detail-btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+        /* Assign Modal */
+        .assign-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .assign-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--surface-light);
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .assign-option:hover { border-color: var(--primary); }
+        .assign-option.selected { border-color: var(--success); background: rgba(0,200,83,0.1); }
+
+        .assign-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .assign-info { flex: 1; }
+        .assign-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+        .assign-status { font-size: 12px; color: var(--success); }
+
+        .assign-time {
+            padding: 8px 15px;
+            background: var(--surface);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Settings Modal */
+        .settings-section { margin-bottom: 30px; }
+        .settings-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--surface-light);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .settings-label { font-size: 14px; }
+        .settings-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-input {
+            width: 80px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--surface);
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.warning { border-left: 4px solid var(--warning); }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sidebar-delivery { width: 240px; }
+            .kanban-column { min-width: 260px; }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar-delivery { display: none; }
+            .header-stats { display: none; }
+            .kanban-column { min-width: 270px; }
+        }
+
+        @media (max-width: 600px) {
+            .kanban-container { padding: 10px; }
+            .kanban-column { min-width: 300px; }
+            .tabs-container { padding: 10px 15px 0; overflow-x: auto; }
+            .tab { padding: 10px 15px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-icon">B</div>
+                <div class="header-title">
+                    <h1>Delivery Hub</h1>
+                    <p>Gerencie seus pedidos de entrega</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <span class="header-stat-value orders" id="stat-orders">0</span>
+                    <span class="header-stat-label">Pedidos Hoje</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-value revenue" id="stat-revenue">R$ 0</span>
+                    <span class="header-stat-label">Faturamento</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-value time" id="stat-time">0 min</span>
+                    <span class="header-stat-label">Tempo Médio</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-value delivery" id="stat-delivery">0</span>
+                    <span class="header-stat-label">Entregadores</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-primary" onclick="criarNovoPedido()">➕ Novo Pedido</button>
+                <button class="btn-settings" onclick="openSettings()">⚙️ Configurações</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar Entregadores -->
+            <aside class="sidebar-delivery">
+                <div class="sidebar-header">
+                    <h3>📦 <span>Entregadores</span></h3>
+                    <button class="btn-add-delivery" onclick="addDeliveryPerson()">+</button>
+                </div>
+                <div class="delivery-list" id="delivery-list">
+                    <!-- Entregadores serão renderizados aqui -->
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Tabs -->
+                <div class="tabs-container">
+                    <button class="tab active" data-status="all" onclick="filterByStatus('all')">
+                        Todos <span class="tab-count" id="tab-all">0</span>
+                    </button>
+                    <button class="tab" data-status="pending" onclick="filterByStatus('pending')">
+                        🕒 Pendente <span class="tab-count" id="tab-pending">0</span>
+                    </button>
+                    <button class="tab" data-status="preparing" onclick="filterByStatus('preparing')">
+                        👨‍🍳 Preparando <span class="tab-count" id="tab-preparing">0</span>
+                    </button>
+                    <button class="tab" data-status="ready" onclick="filterByStatus('ready')">
+                        ✅ Prontos <span class="tab-count" id="tab-ready">0</span>
+                    </button>
+                    <button class="tab" data-status="delivering" onclick="filterByStatus('delivering')">
+                        🚴 Em Rota <span class="tab-count" id="tab-delivering">0</span>
+                    </button>
+                    <button class="tab" data-status="delivered" onclick="filterByStatus('delivered')">
+                        📍 Entregues <span class="tab-count" id="tab-delivered">0</span>
+                    </button>
+                </div>
+
+                <!-- Kanban Board -->
+                <div class="kanban-container">
+                    <!-- Pendente -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="kanban-column-title pending">🕒 Pendente</span>
+                            <span class="kanban-column-count" id="col-pending-count">0</span>
+                        </div>
+                        <div class="kanban-orders" id="col-pending"></div>
+                    </div>
+
+                    <!-- Preparando -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="kanban-column-title preparing">👨‍🍳 Preparando</span>
+                            <span class="kanban-column-count" id="col-preparing-count">0</span>
+                        </div>
+                        <div class="kanban-orders" id="col-preparing"></div>
+                    </div>
+
+                    <!-- Pronto -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="kanban-column-title ready">✅ Pronto</span>
+                            <span class="kanban-column-count" id="col-ready-count">0</span>
+                        </div>
+                        <div class="kanban-orders" id="col-ready"></div>
+                    </div>
+
+                    <!-- Em Entrega -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="kanban-column-title delivering">🚴 Em Entrega</span>
+                            <span class="kanban-column-count" id="col-delivering-count">0</span>
+                        </div>
+                        <div class="kanban-orders" id="col-delivering"></div>
+                    </div>
+
+                    <!-- Entregue -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="kanban-column-title delivered">📍 Entregue</span>
+                            <span class="kanban-column-count" id="col-delivered-count">0</span>
+                        </div>
+                        <div class="kanban-orders" id="col-delivered"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes Pedido -->
+    <div class="modal-overlay" id="modal-order">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Pedido #<span id="modal-order-id">000</span></h2>
+                <button class="modal-close" onclick="closeModal('modal-order')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-section">
+                    <div class="detail-section-title">Cliente</div>
+                    <div class="detail-client">
+                        <div class="detail-client-avatar" id="client-avatar">J</div>
+                        <div class="detail-client-info">
+                            <h4 id="client-name">João Silva</h4>
+                            <p id="client-phone">📞 (11) 99999-9999</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">Endereço de Entrega</div>
+                    <div class="order-address" style="margin: 0;">
+                        <span class="order-address-icon">📍</span>
+                        <span id="client-address">Rua Example, 123 - Centro</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">Itens do Pedido</div>
+                    <div class="detail-items" id="order-items">
+                        <!-- Itens serão renderizados aqui -->
+                    </div>
+                    <div class="detail-total">
+                        <span>Total</span>
+                        <span class="detail-total-value" id="order-total">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="detail-section" id="detail-observation" style="display: none;">
+                    <div class="detail-section-title">Observação</div>
+                    <div class="detail-observation" id="order-observation">
+                        Semobservação
+                    </div>
+                </div>
+
+                <div class="detail-section" id="detail-delivery-person" style="display: none;">
+                    <div class="detail-section-title">Entregador</div>
+                    <div class="detail-delivery-person">
+                        <div class="detail-delivery-avatar" id="delivery-avatar">M</div>
+                        <div class="detail-client-info">
+                            <h4 id="delivery-name">Maria Santos</h4>
+                            <p id="delivery-phone">📱 (11) 98888-8888</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-actions" id="order-detail-actions">
+                <!-- Botões de ação serão inseridos aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Atribuir Entregador -->
+    <div class="modal-overlay" id="modal-assign">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Atribuir <span>Entregador</span></h2>
+                <button class="modal-close" onclick="closeModal('modal-assign')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--text-muted);">Selecione um entregador disponível:</p>
+                <div class="assign-list" id="assign-list">
+                    <!-- Opções serão renderizadas aqui -->
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button class="detail-btn secondary" onclick="closeModal('modal-assign')">Cancelar</button>
+                <button class="detail-btn primary" onclick="confirmAssign()">Confirmar Atribuição</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configurações -->
+    <div class="modal-overlay" id="modal-settings">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Configurações <span>Delivery</span></h2>
+                <button class="modal-close" onclick="closeModal('modal-settings')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <div class="settings-title">Zonas de Entrega</div>
+                    <div id="zones-list">
+                        <!-- Zonas serão renderizadas aqui -->
+                    </div>
+                    <button class="detail-btn secondary" style="margin-top: 15px; width: 100%;" onclick="addZone()">+ Adicionar Zona</button>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-title">Configurações Gerais</div>
+                    <div class="settings-row">
+                        <span class="settings-label">Tempo Médio de Preparo</span>
+                        <div class="settings-value">
+                            <input type="number" class="settings-input" id="prep-time" value="15"> min
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Comissão Entregadores</span>
+                        <div class="settings-value">
+                            <input type="number" class="settings-input" id="commission" value="10"> %
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button class="detail-btn secondary" onclick="closeModal('modal-settings')">Cancelar</button>
+                <button class="detail-btn primary" onclick="saveSettings()">Salvar Configurações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toast-icon">✅</span>
+        <span id="toast-message">Ação realizada!</span>
+    </div>
+
+    <script>
+        // Dados simulados
+        let data = {
+            orders: [
+                { id: '001', client: 'João Silva', phone: '(11) 99999-1111', address: 'Rua das Flores, 123 - Centro', items: [{ name: 'Hambúrguer Bacon', qty: 1, price: 25.90 }, { name: 'Batata Frita', qty: 1, price: 12.90 }, { name: 'Refrigerante', qty: 1, price: 6.00 }], total: 44.80, status: 'pending', platform: 'delivery', createdAt: new Date(Date.now() - 5*60000), observation: '' },
+                { id: '002', client: 'Maria Santos', phone: '(11) 99999-2222', address: 'Av. Brasil, 456 - Jardins', items: [{ name: 'Combo Burger', qty: 2, price: 38.90 }, { name: 'Suco Natural', qty: 2, price: 15.00 }], total: 107.80, status: 'pending', platform: 'ifood', createdAt: new Date(Date.now() - 3*60000), observation: 'Sem cebola' },
+                { id: '003', client: 'Pedro Costa', phone: '(11) 99999-3333', address: 'Rua Augusta, 789 - Bela Vista', items: [{ name: 'X-Bacon', qty: 1, price: 22.90 }, { name: 'Batata Rústica', qty: 1, price: 14.90 }], total: 37.80, status: 'preparing', platform: 'rappi', createdAt: new Date(Date.now() - 15*60000), observation: '' },
+                { id: '004', client: 'Ana Oliveira', phone: '(11) 99999-4444', address: 'Av. Paulista, 1000 - Bela Vista', items: [{ name: 'Hambúrguer Clássico', qty: 3, price: 19.90 }, { name: 'Refrigerante', qty: 3, price: 6.00 }], total: 77.70, status: 'preparing', platform: 'uber', createdAt: new Date(Date.now() - 12*60000), observation: 'Entregar no portão B' },
+                { id: '005', client: 'Carlos Lima', phone: '(11) 99999-5555', address: 'Rua dos Pinhais, 55 - Parque', items: [{ name: 'Combo Premium', qty: 1, price: 45.90 }], total: 45.90, status: 'ready', platform: 'ifood', createdAt: new Date(Date.now() - 25*60000), deliveryPerson: { name: 'João Silva', phone: '(11) 99999-1111' }, observation: '' },
+                { id: '006', client: 'Juliana Melo', phone: '(11) 99999-6666', address: 'Av. Europa, 200 - Jardim Europa', items: [{ name: 'Pizza Média', qty: 1, price: 55.00 }, { name: 'Refrigerante 2L', qty: 1, price: 10.00 }], total: 65.00, status: 'delivering', platform: 'delivery', createdAt: new Date(Date.now() - 35*60000), deliveryPerson: { name: 'Maria Santos', phone: '(11) 99999-2222' }, observation: 'Casa com portão cinza' },
+                { id: '007', client: 'Roberto Alves', phone: '(11) 99999-7777', address: 'Rua das Laranjeiras, 88 - Centro', items: [{ name: 'Sanduíche Natural', qty: 2, price: 18.90 }, { name: 'Suco Detox', qty: 2, price: 14.90 }], total: 67.60, status: 'delivered', platform: 'rappi', createdAt: new Date(Date.now() - 60*60000), deliveryPerson: { name: 'Pedro Costa', phone: '(11) 99999-3333' }, observation: '' }
+            ],
+            deliveryPersons: [
+                { id: 1, name: 'João Silva', phone: '(11) 99999-1111', status: 'delivering', todayDeliveries: 8, balance: 125.00 },
+                { id: 2, name: 'Maria Santos', phone: '(11) 99999-2222', status: 'available', todayDeliveries: 5, balance: 87.50 },
+                { id: 3, name: 'Pedro Costa', phone: '(11) 99999-3333', status: 'available', todayDeliveries: 12, balance: 180.00 },
+                { id: 4, name: 'Ana Carla', phone: '(11) 99999-4444', status: 'offline', todayDeliveries: 0, balance: 0 }
+            ],
+            zones: [
+                { id: 1, name: 'Centro', distance: '0-3km', fee: 5.00 },
+                { id: 2, name: 'Zona Sul', distance: '3-5km', fee: 8.00 },
+                { id: 3, name: 'Zona Oeste', distance: '5-10km', fee: 12.00 }
+            ],
+            settings: {
+                prepTime: 15,
+                commission: 10
+            }
+        };
+
+        let currentFilter = 'all';
+        let selectedOrderId = null;
+        let selectedDeliveryId = null;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAll();
+            startPolling();
+        });
+
+        function startPolling() {
+            setInterval(() => {
+                console.log('Atualizando dados...');
+                renderAll();
+            }, 10000);
+        }
+
+        function renderAll() {
+            renderStats();
+            renderTabs();
+            renderKanban();
+            renderDeliveryPersons();
+            renderZones();
+        }
+
+        function renderStats() {
+            const todayOrders = data.orders.filter(o => {
+                const today = new Date().toDateString();
+                return new Date(o.createdAt).toDateString() === today;
+            });
+
+            const totalOrders = todayOrders.length;
+            const revenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
+            const avgTime = 18;
+            const activeDelivery = data.deliveryPersons.filter(d => d.status !== 'offline').length;
+
+            document.getElementById('stat-orders').textContent = totalOrders;
+            document.getElementById('stat-revenue').textContent = `R$ ${revenue.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-time').textContent = `${avgTime} min`;
+            document.getElementById('stat-delivery').textContent = activeDelivery;
+        }
+
+        function renderTabs() {
+            const statusCounts = {
+                all: data.orders.length,
+                pending: data.orders.filter(o => o.status === 'pending').length,
+                preparing: data.orders.filter(o => o.status === 'preparing').length,
+                ready: data.orders.filter(o => o.status === 'ready').length,
+                delivering: data.orders.filter(o => o.status === 'delivering').length,
+                delivered: data.orders.filter(o => o.status === 'delivered').length
+            };
+
+            Object.keys(statusCounts).forEach(status => {
+                const tab = document.getElementById(`tab-${status}`);
+                if (tab) {
+                    tab.textContent = statusCounts[status];
+                    if (status === 'pending' && statusCounts[status] > 0) {
+                        tab.classList.add('has-urgent');
+                    }
+                }
+            });
+        }
+
+        function renderKanban() {
+            const columns = ['pending', 'preparing', 'ready', 'delivering', 'delivered'];
+            const filteredOrders = currentFilter === 'all' 
+                ? data.orders 
+                : data.orders.filter(o => o.status === currentFilter);
+
+            columns.forEach(status => {
+                const col = document.getElementById(`col-${status}`);
+                const countEl = document.getElementById(`col-${status}-count`);
+                if (!col) return;
+
+                const orders = filteredOrders.filter(o => o.status === status);
+                countEl.textContent = orders.length;
+
+                col.innerHTML = orders.map(order => createOrderCard(order)).join('');
+            });
+        }
+
+        function createOrderCard(order) {
+            const timeAgo = getTimeAgo(order.createdAt);
+            const isUrgent = order.status === 'pending' && new Date() - new Date(order.createdAt) > 10*60000;
+            
+            return `
+                <div class="order-card ${order.status}" onclick="openOrderDetail('${order.id}')">
+                    <div class="order-card-header">
+                        <span class="order-id">#${order.id}</span>
+                        <span class="order-badge ${order.platform}">${getPlatformLabel(order.platform)}</span>
+                    </div>
+                    <div class="order-client">
+                        <div class="order-client-name">${order.client}</div>
+                        <div class="order-client-phone">📞 ${order.phone}</div>
+                    </div>
+                    <div class="order-items-list">
+                        ${order.items.slice(0, 2).map(item => `<div class="order-item-line"><strong>${item.qty}x</strong> ${item.name}</div>`).join('')}
+                        ${order.items.length > 2 ? `<div class="order-item-line" style="color: var(--primary);">+ ${order.items.length - 2} mais itens</div>` : ''}
+                    </div>
+                    <div class="order-address">
+                        <span class="order-address-icon">📍</span>
+                        <span>${order.address}</span>
+                    </div>
+                    <div class="order-footer">
+                        <span class="order-time ${isUrgent ? 'urgent' : ''}">⏱️ ${timeAgo}</span>
+                        <span class="order-total">R$ ${order.total.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    <div class="order-actions" onclick="event.stopPropagation()">
+                        ${getActionButtons(order)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getActionButtons(order) {
+            switch(order.status) {
+                case 'pending':
+                    return `
+                        <button class="order-btn accept" onclick="acceptOrder('${order.id}')">✅ Aceitar</button>
+                        <button class="order-btn print" onclick="printOrder('${order.id}')">🖨️</button>
+                    `;
+                case 'preparing':
+                    return `
+                        <button class="order-btn preparing" onclick="markPreparing('${order.id}')">👨‍🍳 Preparar</button>
+                        <button class="order-btn print" onclick="printOrder('${order.id}')">🖨️</button>
+                    `;
+                case 'ready':
+                    return `
+                        <button class="order-btn assign" onclick="openAssignModal('${order.id}')">🚚 Atribuir</button>
+                        <button class="order-btn print" onclick="printOrder('${order.id}')">🖨️</button>
+                    `;
+                case 'delivering':
+                    return `
+                        <button class="order-btn deliver" onclick="markDelivered('${order.id}')">✅ Entregue</button>
+                    `;
+                default:
+                    return `
+                        <button class="order-btn print" onclick="printOrder('${order.id}')">��️ Imprimir</button>
+                    `;
+            }
+        }
+
+        function renderDeliveryPersons() {
+            const list = document.getElementById('delivery-list');
+            list.innerHTML = data.deliveryPersons.map(person => `
+                <div class="delivery-person" onclick="selectDeliveryPerson(${person.id})">
+                    <div class="delivery-person-header">
+                        <div class="delivery-avatar">${person.name.charAt(0)}</div>
+                        <div class="delivery-info">
+                            <div class="delivery-name">${person.name}</div>
+                            <div class="delivery-phone">${person.phone}</div>
+                        </div>
+                        <span class="delivery-status ${person.status}">${getStatusLabel(person.status)}</span>
+                    </div>
+                    <div class="delivery-stats">
+                        <div class="delivery-stat">
+                            <div class="delivery-stat-value">${person.todayDeliveries}</div>
+                            <div class="delivery-stat-label">Entregas Hoje</div>
+                        </div>
+                        <div class="delivery-stat">
+                            <div class="delivery-stat-value">R$ ${person.balance.toFixed(2).replace('.', ',')}</div>
+                            <div class="delivery-stat-label">Saldo</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderZones() {
+            const list = document.getElementById('zones-list');
+            list.innerHTML = data.zones.map(zone => `
+                <div class="settings-row">
+                    <span class="settings-label">${zone.name} (${zone.distance})</span>
+                    <div class="settings-value">
+                        <span>R$ ${zone.fee.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Funções de ação
+        function acceptOrder(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'preparing';
+                renderAll();
+                showToast('success', '✅', `Pedido #${orderId} aceito e em preparação!`);
+            }
+        }
+
+        function markPreparing(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'ready';
+                renderAll();
+                showToast('success', '👨‍🍳', `Pedido #${orderId} marcado como pronto!`);
+            }
+        }
+
+        function markReady(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'ready';
+                renderAll();
+                showToast('success', '✅', `Pedido #${orderId} pronto para entrega!`);
+            }
+        }
+
+        function openAssignModal(orderId) {
+            selectedOrderId = orderId;
+            const list = document.getElementById('assign-list');
+            const available = data.deliveryPersons.filter(d => d.status === 'available');
+            
+            list.innerHTML = available.map(person => `
+                <div class="assign-option" onclick="selectDeliveryAssign(${person.id})" data-id="${person.id}">
+                    <div class="assign-avatar">${person.name.charAt(0)}</div>
+                    <div class="assign-info">
+                        <div class="assign-name">${person.name}</div>
+                        <div class="assign-status">Disponível</div>
+                    </div>
+                    <span class="assign-time">~${Math.floor(Math.random() * 10) + 5} min</span>
+                </div>
+            `).join('');
+
+            if (available.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhum entregador disponível</p>';
+            }
+
+            openModal('modal-assign');
+        }
+
+        function selectDeliveryAssign(personId) {
+            document.querySelectorAll('.assign-option').forEach(el => el.classList.remove('selected'));
+            const selected = document.querySelector(`.assign-option[data-id="${personId}"]`);
+            if (selected) selected.classList.add('selected');
+            selectedDeliveryId = personId;
+        }
+
+        function confirmAssign() {
+            if (!selectedOrderId || !selectedDeliveryId) {
+                showToast('error', '❌', 'Selecione um entregador');
+                return;
+            }
+
+            const order = data.orders.find(o => o.id === selectedOrderId);
+            const person = data.deliveryPersons.find(d => d.id === selectedDeliveryId);
+            
+            if (order && person) {
+                order.status = 'delivering';
+                order.deliveryPerson = { name: person.name, phone: person.phone };
+                person.status = 'delivering';
+                
+                renderAll();
+                closeModal('modal-assign');
+                showToast('success', '🚚', `Entregador ${person.name} atribuído ao pedido #${selectedOrderId}`);
+            }
+
+            selectedOrderId = null;
+            selectedDeliveryId = null;
+        }
+
+        function markDelivered(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                if (order.deliveryPerson) {
+                    const person = data.deliveryPersons.find(d => d.name === order.deliveryPerson.name);
+                    if (person) {
+                        person.status = 'available';
+                        person.todayDeliveries++;
+                    }
+                }
+                order.status = 'delivered';
+                renderAll();
+                showToast('success', '✅', `Pedido #${orderId} entregue com sucesso!`);
+            }
+        }
+
+        function printOrder(orderId) {
+            showToast('warning', '🖨️', `Imprimindo comanda do pedido #${orderId}...`);
+        }
+
+        // Modal
+        function openOrderDetail(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            selectedOrderId = orderId;
+            document.getElementById('modal-order-id').textContent = orderId;
+            document.getElementById('client-avatar').textContent = order.client.charAt(0);
+            document.getElementById('client-name').textContent = order.client;
+            document.getElementById('client-phone').textContent = `📞 ${order.phone}`;
+            document.getElementById('client-address').textContent = order.address;
+            document.getElementById('order-total').textContent = `R$ ${order.total.toFixed(2).replace('.', ',')}`;
+
+            const itemsList = document.getElementById('order-items');
+            itemsList.innerHTML = order.items.map(item => `
+                <div class="detail-item">
+                    <span class="detail-item-name">${item.name}</span>
+                    <span class="detail-item-qty">${item.qty}x</span>
+                    <span class="detail-item-price">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</span>
+                </div>
+            `).join('');
+
+            const obsSection = document.getElementById('detail-observation');
+            if (order.observation) {
+                obsSection.style.display = 'block';
+                document.getElementById('order-observation').textContent = order.observation;
+            } else {
+                obsSection.style.display = 'none';
+            }
+
+            const deliverySection = document.getElementById('detail-delivery-person');
+            const actionsContainer = document.getElementById('order-detail-actions');
+            
+            if (order.deliveryPerson && order.status !== 'delivered') {
+                deliverySection.style.display = 'block';
+                document.getElementById('delivery-avatar').textContent = order.deliveryPerson.name.charAt(0);
+                document.getElementById('delivery-name').textContent = order.deliveryPerson.name;
+                document.getElementById('delivery-phone').textContent = `📱 ${order.deliveryPerson.phone}`;
+            } else {
+                deliverySection.style.display = 'none';
+            }
+
+            // Botões de ação no modal
+            let buttons = '';
+            switch(order.status) {
+                case 'pending':
+                    buttons = `
+                        <button class="detail-btn primary" onclick="acceptOrder('${orderId}'); closeModal('modal-order');">✅ Aceitar Pedido</button>
+                        <button class="detail-btn secondary" onclick="printOrder('${orderId}')">🖨️ Imprimir Comanda</button>
+                    `;
+                    break;
+                case 'preparing':
+                    buttons = `
+                        <button class="detail-btn primary" onclick="markPreparing('${orderId}'); closeModal('modal-order');">✅ Marcar Pronto</button>
+                        <button class="detail-btn secondary" onclick="printOrder('${orderId}')">🖨️ Imprimir Comanda</button>
+                    `;
+                    break;
+                case 'ready':
+                    buttons = `
+                        <button class="detail-btn primary" onclick="openAssignModal('${orderId}'); closeModal('modal-order');">🚚 Atribuir Entregador</button>
+                        <button class="detail-btn secondary" onclick="printOrder('${orderId}')">🖨️ Imprimir Comanda</button>
+                    `;
+                    break;
+                case 'delivering':
+                    buttons = `
+                        <button class="detail-btn primary" onclick="markDelivered('${orderId}'); closeModal('modal-order');">✅ Confirmar Entrega</button>
+                    `;
+                    break;
+                default:
+                    buttons = `
+                        <button class="detail-btn secondary" onclick="printOrder('${orderId}')">🖨️ Imprimir Comanda</button>
+                    `;
+            }
+            actionsContainer.innerHTML = buttons;
+
+            openModal('modal-order');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Filtros
+        function filterByStatus(status) {
+            currentFilter = status;
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.status === status);
+            });
+            renderKanban();
+        }
+
+        function selectDeliveryPerson(id) {
+            document.querySelectorAll('.delivery-person').forEach(el => el.classList.remove('selected'));
+        }
+
+        //Configurações
+        function openSettings() {
+            document.getElementById('prep-time').value = data.settings.prepTime;
+            document.getElementById('commission').value = data.settings.commission;
+            openModal('modal-settings');
+        }
+
+        function saveSettings() {
+            data.settings.prepTime = parseInt(document.getElementById('prep-time').value);
+            data.settings.commission = parseInt(document.getElementById('commission').value);
+            closeModal('modal-settings');
+            showToast('success', '⚙️', 'Configurações salvas!');
+        }
+
+        function addZone() {
+            showToast('warning', '➕', 'Funcionalidade em desenvolvimento');
+        }
+
+        function addDeliveryPerson() {
+            const nome = prompt('Nome do entregador:');
+            if (!nome) return;
+            const phone = prompt('Telefone do entregador:') || '';
+            
+            const entregador = {
+                id: 'DEL' + Date.now(),
+                name: nome,
+                phone: phone,
+                status: 'available',
+                currentOrder: null
+            };
+            
+            data.deliveryPersons.push(entregador);
+            renderDeliveryPersons();
+            showToast('success', '✅', 'Entregador ' + nome + ' adicionado!');
+        }
+        
+        async function criarNovoPedido() {
+            const cliente = prompt('Nome do cliente:');
+            if (!cliente) return;
+            const telefone = prompt('Telefone:') || '';
+            const endereco = prompt('Endereço:') || '';
+            
+            if (!endereco) {
+                alert('Endereço é obrigatório!');
+                return;
+            }
+            
+            // Buscar produtos
+            let produtos = [];
+            try {
+                const res = await fetch('/api/produtos');
+                produtos = await res.json();
+            } catch (e) {
+                produtos = [];
+            }
+            
+            if (produtos.length === 0) {
+                alert('Nenhum produto cadastrado! Cadastre produtos primeiro.');
+                return;
+            }
+            
+            // Selecionar produtos
+            let itens = [];
+            let continuar = true;
+            while (continuar) {
+                const prodNome = prompt('Produto (ou "fim" para encerrar):');
+                if (!prodNome || prodNome.toLowerCase() === 'fim') {
+                    continuar = false;
+                    break;
+                }
+                
+                // Buscar produto similar
+                const prod = produtos.find(p => p.nome.toLowerCase().includes(prodNome.toLowerCase()));
+                if (!prod) {
+                    alert('Produto não encontrado!');
+                    continue;
+                }
+                
+                const qty = parseInt(prompt('Quantidade:') || '1');
+                if (qty > 0) {
+                    itens.push({
+                        name: prod.nome,
+                        qty: qty,
+                        price: prod.preco || 0
+                    });
+                }
+            }
+            
+            if (itens.length === 0) {
+                alert('Nenhum item selecionado!');
+                return;
+            }
+            
+            const total = itens.reduce((s, i) => s + (i.price * i.qty), 0);
+            const pedido = {
+                id: 'PED' + Date.now(),
+                client: cliente,
+                phone: telefone,
+                address: endereco,
+                items: itens,
+                total: total,
+                status: 'pending',
+                platform: 'delivery',
+                createdAt: new Date(),
+                observation: ''
+            };
+            
+            data.orders.push(pedido);
+            renderAll();
+            showToast('success', '✅', 'Pedido criado!');
+        }
+
+        // Utilitários
+        function getTimeAgo(date) {
+            const diff = new Date() - new Date(date);
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'agora';
+            if (mins < 60) return `${mins} min`;
+            return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+        }
+
+        function getPlatformLabel(platform) {
+            const labels = { delivery: 'Próprio', ifood: 'iFood', rappi: 'Rappi', uber: 'Uber' };
+            return labels[platform] || platform;
+        }
+
+        function getStatusLabel(status) {
+            const labels = { available: 'Disponível', delivering: 'Em entrega', offline: 'Offline' };
+            return labels[status] || status;
+        }
+
+        function showToast(type, icon, message) {
+            const toast = document.getElementById('toast');
+            toast.className = `toast ${type}`;
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Fechar modais ao clicar fora
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    <!-- Footer -->
+    <div style="position:fixed;bottom:0;left:0;right:0;background:var(--surface);padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border);z-index:100;">
+        <span style="font-size:12px;color:var(--text-muted);">Desenvolvido por <strong style="color:var(--primary);">4dotcom</strong></span>
+        <span style="opacity:0.6">v1.0.0</span>
+    </div>
+    <button onclick="location.href='menu.html'" style="position:fixed;top:15px;left:15px;background:var(--primary);color:white;width:44px;height:44px;border-radius:12px;border:none;font-size:20px;cursor:pointer;z-index:200;">🏠</button>
+</body>
+</html>

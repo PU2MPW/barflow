@@ -1,0 +1,83 @@
+import { getDb } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        
+        if (method === 'GET') {
+            const { ativo } = query;
+            let sql = 'SELECT * FROM cupons WHERE 1=1';
+            const params = [];
+            
+            if (ativo !== undefined) { sql += ' AND ativo = ?'; params.push(ativo); }
+            
+            sql += ' ORDER BY codigo';
+            const cupons = db.prepare(sql).all(...params);
+            return res.json(cupons);
+        }
+        
+        if (method === 'POST' && query.validar) {
+            const { codigo, valor_pedido } = query;
+            if (!codigo) return res.status(400).json({ error: 'codigo obrigatorio' });
+            
+            const cupom = db.prepare('SELECT * FROM cupons WHERE codigo = ? AND ativo = 1').get(codigo);
+            if (!cupom) return res.status(404).json({ error: 'Cupom invalido' });
+            
+            let desconto = 0;
+            if (cupom.tipo === 'porcentagem') {
+                desconto = (valor_pedido || 0) * (cupom.valor / 100);
+            } else {
+                desconto = cupom.valor;
+            }
+            
+            return res.json({ valido: true, cupom, desconto });
+        }
+        
+        if (method === 'POST') {
+            const { codigo, tipo, valor } = body;
+            if (!codigo || !tipo || valor === undefined) {
+                return res.status(400).json({ error: 'codigo, tipo e valor obrigatorios' });
+            }
+            
+            if (!['porcentagem', 'fixo'].includes(tipo)) {
+                return res.status(400).json({ error: 'tipo deve ser porcentagem ou fixo' });
+            }
+            
+            const result = db.prepare('INSERT INTO cupons (codigo, tipo, valor) VALUES (?, ?, ?)').run(codigo, tipo, valor);
+            return res.status(201).json({ id: result.lastInsertRowid, message: 'Cupom criado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = query.id;
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const fields = [];
+            const values = [];
+            
+            if (body.codigo !== undefined) { fields.push('codigo = ?'); values.push(body.codigo); }
+            if (body.tipo !== undefined) { fields.push('tipo = ?'); values.push(body.tipo); }
+            if (body.valor !== undefined) { fields.push('valor = ?'); values.push(body.valor); }
+            if (body.ativo !== undefined) { fields.push('ativo = ?'); values.push(body.ativo); }
+            
+            if (fields.length === 0) return res.status(400).json({ error: 'nenhum campo para atualizar' });
+            
+            values.push(id);
+            db.prepare(`UPDATE cupons SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+            return res.json({ message: 'Cupom atualizado' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = query.id;
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            db.prepare('DELETE FROM cupons WHERE id = ?').run(id);
+            return res.json({ message: 'Cupom deletado' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

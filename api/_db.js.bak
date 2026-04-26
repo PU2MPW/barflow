@@ -1,0 +1,66 @@
+// Database em memória para Vercel
+const data = {};
+
+export function getDb() {
+    return {
+        prepare: (sql) => ({
+            run: (...params) => runSql(sql, params),
+            get: (...params) => runSql(sql, params, 'get'),
+            all: (...params) => runSql(sql, params, 'all')
+        }),
+        exec: (sql) => runSql(sql, [])
+    };
+}
+
+function runSql(sql, params, mode = 'run') {
+    const name = extractTableName(sql);
+    if (!name) return { changes: 0 };
+    if (!data[name]) data[name] = [];
+    
+    if (sql.includes('INSERT') || sql.includes('TABLE')) {
+        if (sql.includes('TABLE')) return { changes: 0 };
+        const item = params[0] || {};
+        const id = data[name].length + 1;
+        const newItem = { id, ...item };
+        data[name].push(newItem);
+        return { changes: 1, lastInsertRowid: id };
+    }
+    
+    if (sql.includes('UPDATE') || sql.includes('DELETE')) {
+        const id = params.find(p => typeof p === 'number') || params[0]?.id;
+        if (id) {
+            const idx = data[name].findIndex(r => r.id === id);
+            if (idx >= 0) {
+                if (sql.includes('DELETE')) {
+                    data[name].splice(idx, 1);
+                } else {
+                    Object.assign(data[name][idx], params[0]);
+                }
+            }
+        }
+        return { changes: 1 };
+    }
+    
+    if (mode === 'get') {
+        return data[name][0] || null;
+    }
+    if (mode === 'all') {
+        return data[name];
+    }
+    return { changes: 0 };
+}
+
+function extractTableName(sql) {
+    const match = sql.match(/(?:FROM|INTO|UPDATE|DELETE FROM|TABLE)\s+(\w+)/i);
+    return match ? match[1].toLowerCase() : null;
+}
+
+export function getCollection(name) {
+    const n = name.toLowerCase();
+    if (!data[n]) data[n] = [];
+    return data[n];
+}
+
+export function setData(name, items) {
+    data[name.toLowerCase()] = items;
+}

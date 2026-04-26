@@ -1,0 +1,60 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const entregadores = getCollection('entregadores');
+        
+        if (method === 'GET') {
+            const { ativo } = query;
+            let resultados = [...entregadores];
+            
+            if (ativo !== undefined) resultados = resultados.filter(e => e.ativo == ativo);
+            resultados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            return res.json(resultados);
+        }
+        
+        if (method === 'POST') {
+            const { nome, telefone, tipo_veiculo } = body;
+            if (!nome || !telefone) return res.status(400).json({ error: 'nome e telefone obrigatorios' });
+            
+            const newId = entregadores.length > 0 ? Math.max(...entregadores.map(e => e.id)) + 1 : 1;
+            const newEntregador = { id: newId, nome, telefone, tipo_veiculo: tipo_veiculo || 'moto', ativo: 1 };
+            entregadores.push(newEntregador);
+            
+            return res.status(201).json({ id: newId, message: 'Entregador criado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = entregadores.findIndex(e => e.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Entregador nao encontrado' });
+            
+            if (body.nome !== undefined) entregadores[index].nome = body.nome;
+            if (body.telefone !== undefined) entregadores[index].telefone = body.telefone;
+            if (body.tipo_veiculo !== undefined) entregadores[index].tipo_veiculo = body.tipo_veiculo;
+            if (body.ativo !== undefined) entregadores[index].ativo = body.ativo;
+            
+            return res.json({ message: 'Entregador atualizado' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = entregadores.findIndex(e => e.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Entregador nao encontrado' });
+            
+            entregadores.splice(index, 1);
+            return res.json({ message: 'Entregador deletado' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

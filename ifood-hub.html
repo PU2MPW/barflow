@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub iFood - BarFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --ifood: #EA1D2C;
+            --ifood-dark: #C41624;
+            --secondary: #1A1A2E;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --background: #0F0F1A;
+            --surface: #1A1A2E;
+            --surface-light: #252542;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #2D2D4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--surface);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ifood);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        .header-title.connected::before {
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 23, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .connection-status.connected {
+            background: rgba(0, 200, 83, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .connection-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title span {
+            background: var(--ifood);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .order-card {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            border-color: var(--ifood);
+            box-shadow: 0 4px 20px rgba(234, 29, 44, 0.15);
+        }
+
+        .order-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .order-id {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ifood);
+        }
+
+        .order-id::before {
+            content: '#';
+            opacity: 0.7;
+        }
+
+        .order-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .order-badge.new {
+            background: rgba(234, 29, 44, 0.2);
+            color: var(--ifood);
+        }
+
+        .order-badge.preparing {
+            background: rgba(255, 179, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .order-badge.ready {
+            background: rgba(0, 200, 83, 0.2);
+            color: var(--success);
+        }
+
+        .order-customer {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .order-items {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-qty {
+            background: var(--ifood);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .item-note {
+            font-size: 12px;
+            color: var(--warning);
+            font-style: italic;
+        }
+
+        .order-timer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 16px;
+        }
+
+        .order-timer::before {
+            content: '⏱';
+        }
+
+        .order-timer.urgent {
+            color: var(--danger);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .order-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .order-actions.single {
+            grid-template-columns: 1fr;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accept {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-accept:hover {
+            background: #00A344;
+        }
+
+        .btn-reject {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #E01540;
+        }
+
+        .btn-preparing {
+            background: var(--warning);
+            color: #1A1A2E;
+        }
+
+        .btn-ready {
+            background: var(--ifood);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin: 20px 0;
+            padding: 0 8px;
+        }
+
+        .timeline-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .timeline-step:first-child::before {
+            display: none;
+        }
+
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--surface-light);
+            border: 2px solid var(--border);
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-step.active .timeline-dot {
+            background: var(--ifood);
+            border-color: var(--ifood);
+        }
+
+        .timeline-step.completed .timeline-dot {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .timeline-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .timeline-step.active .timeline-label {
+            color: var(--ifood);
+        }
+
+        .timeline-step.completed .timeline-label {
+            color: var(--success);
+        }
+
+        .logs-section {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface-light);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .log-type {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .log-type.order {
+            background: rgba(0, 217, 255, 0.2);
+            color: var(--accent);
+        }
+
+        .log-type.status {
+            background: rgba(0, 200, 83, 0.2);
+            color: var(--success);
+        }
+
+        .log-type.error {
+            background: rgba(255, 23, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .log-message {
+            flex: 1;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .config-group {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .config-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: var(--ifood);
+        }
+
+        .config-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-test {
+            background: linear-gradient(135deg, var(--ifood), var(--ifood-dark));
+            color: white;
+            padding: 14px 24px;
+        }
+
+        .btn-save {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state::before {
+            content: '📦';
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connection-status {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <a href="dashboard.html" class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">BarFlow</span>
+            </a>
+            <h1 class="header-title" id="connectionTitle">iFood Hub</h1>
+        </div>
+        <div class="header-actions">
+            <button onclick="location.href='menu.html'" style="background:var(--primary);color:white;padding:8px 16px;border-radius:20px;border:none;font-weight:bold;cursor:pointer;">🏠 Menu</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">
+                Pedidos Recebidos <span id="ordersCount">0</span>
+            </h2>
+            <div class="orders-grid" id="ordersGrid">
+                <div class="empty-state">
+                    Nenhum pedido no momento<br>Aguardando novos pedidos...
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Timeline do Pedido</h2>
+            <div class="timeline" id="timeline">
+                <div class="timeline-step completed">
+                    <div class="timeline-dot">✓</div>
+                    <div class="timeline-label">Pedido Recebido</div>
+                </div>
+                <div class="timeline-step active">
+                    <div class="timeline-dot">1</div>
+                    <div class="timeline-label">Preparando</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot">2</div>
+                    <div class="timeline-label">Pronto</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot">3</div>
+                    <div class="timeline-label">Entregue</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Logs - Webhooks</h2>
+            <div class="logs-section" id="logsSection">
+                <div class="log-item">
+                    <span class="log-time">--:--</span>
+                    <span class="log-type order">ORDER</span>
+                    <span class="log-message">Nenhum webhook recebido</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Configurações</h2>
+            <div class="config-grid">
+                <div class="config-group">
+                    <label class="config-label">API Key iFood</label>
+                    <input type="password" class="config-input" id="apiKey" placeholder="ifk_live_..." value="">
+                </div>
+                <div class="config-group">
+                    <label class="config-label">Webhook URL</label>
+                    <input type="url" class="config-input" id="webhookUrl" placeholder="https://seu-dominio.com/api/ifood/webhook" value="">
+                </div>
+            </div>
+            <div class="config-actions">
+                <button class="btn btn-test" id="testWebhook">Testar Webhook</button>
+                <button class="btn btn-save" id="saveConfig">Salvar Configuração</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const DEMO_ORDERS = [
+            {
+                id: '2847',
+                cliente: 'João Silva',
+                itens: [
+                    { qty: 2, nome: 'X-Tudo', obs: 'Sem onion' },
+                    { qty: 1, nome: 'Batata Frita', obs: '' },
+                    { qty: 1, nome: 'Refrigerante 500ml', obs: '' }
+                ],
+                tempo: 15,
+                status: 'new'
+            },
+            {
+                id: '2846',
+                cliente: 'Maria Santos',
+                itens: [
+                    { qty: 1, nome: 'Hambúrguer Artesanal', obs: 'Pão integral' },
+                    { qty: 1, nome: 'Suco Natural', obs: 'Sem açúcar' }
+                ],
+                tempo: 8,
+                status: 'preparing'
+            },
+            {
+                id: '2845',
+                cliente: 'Pedro Costa',
+                itens: [
+                    { qty: 3, nome: 'Pizza Média', obs: 'Baixo queijo' }
+                ],
+                tempo: 22,
+                status: 'ready'
+            }
+        ];
+
+        let orders = [];
+        let connected = false;
+
+        function renderOrders() {
+            const grid = document.getElementById('ordersGrid');
+            const count = document.getElementById('ordersCount');
+            
+            count.textContent = orders.length;
+            
+            if (orders.length === 0) {
+                grid.innerHTML = '<div class="empty-state">Nenhum pedido no momento<br>Aguardando novos pedidos...</div>';
+                return;
+            }
+
+            grid.innerHTML = orders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-id">${order.id}</span>
+                        <span class="order-badge ${order.status}">${order.status === 'new' ? 'Novo' : order.status === 'preparing' ? 'Preparando' : 'Pronto'}</span>
+                    </div>
+                    <div class="order-customer">${order.cliente}</div>
+                    <div class="order-items">
+                        ${order.itens.map(item => `
+                            <div class="order-item">
+                                <span class="item-qty">${item.qty}x</span>
+                                <span class="item-name">${item.nome}</span>
+                                ${item.obs ? `<span class="item-note">${item.obs}</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="order-timer ${order.tempo > 15 ? 'urgent' : ''}">${order.tempo} min</div>
+                    <div class="order-actions ${order.status !== 'new' ? 'single' : ''}">
+                        ${order.status === 'new' ? `
+                            <button class="btn btn-accept" onclick="acceptOrder('${order.id}')">Aceitar</button>
+                            <button class="btn btn-reject" onclick="rejectOrder('${order.id}')">Recusar</button>
+                        ` : order.status === 'preparing' ? `
+                            <button class="btn btn-ready" onclick="markReady('${order.id}')">Marcar Pronto</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLogs() {
+            const logs = [
+                { time: '14:32', type: 'order', message: 'Novo pedido #2847received' },
+                { time: '14:30', type: 'status', message: 'Pedido #2845 marcadocomo pronto' },
+                { time: '14:28', type: 'order', message: 'Novo pedido #2846received' },
+                { time: '14:25', type: 'status', message: 'Pedido #2844entregue' },
+                { time: '14:20', type: 'error', message: 'Falhanotificação #2843' }
+            ];
+
+            document.getElementById('logsSection').innerHTML = logs.map(log => `
+                <div class="log-item">
+                    <span class="log-time">${log.time}</span>
+                    <span class="log-type ${log.type}">${log.type.toUpperCase()}</span>
+                    <span class="log-message">${log.message}</span>
+                </div>
+            `).join('');
+        }
+
+        function acceptOrder(id) {
+            const order = orders.find(o => o.id === id);
+            if (order) {
+                order.status = 'preparing';
+                renderOrders();
+                addLog('status', `Pedido #${id}aceito`);
+            }
+        }
+
+        function rejectOrder(id) {
+            orders = orders.filter(o => o.id !== id);
+            renderOrders();
+            addLog('error', `Pedido #${id}recusado`);
+        }
+
+        function markReady(id) {
+            const order = orders.find(o => o.id === id);
+            if (order) {
+                order.status = 'ready';
+                renderOrders();
+                addLog('status', `Pedido #${id}marcado como pronto`);
+            }
+        }
+
+        function addLog(type, message) {
+            const now = new Date();
+            const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            renderLogs();
+        }
+
+        async function testWebhook() {
+            const btn = document.getElementById('testWebhook');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch('/api/ifood/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    alert('Webhook enviado com sucesso!');
+                } else {
+                    throw new Error('Falha na requisição');
+                }
+            } catch (error) {
+                console.log('Modo demo - webhook simulado');
+                alert('Webhook de teste enviado!\n\n(Modo Demo - API não configurada)');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Testar Webhook';
+            }
+        }
+
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value;
+            const webhookUrl = document.getElementById('webhookUrl').value;
+            
+            localStorage.setItem('ifood_config', JSON.stringify({ apiKey, webhookUrl }));
+            alert('Configurações salvas!');
+        }
+
+        function checkConnection() {
+            connected = Math.random() > 0.3;
+            
+            const status = document.getElementById('connectionStatus');
+            const title = document.getElementById('connectionTitle');
+            
+            if (connected) {
+                status.classList.add('connected');
+                status.innerHTML = '<span>Conectado</span>';
+                title.classList.add('connected');
+            } else {
+                status.classList.remove('connected');
+                status.innerHTML = '<span>Desconectado</span>';
+                title.classList.remove('connected');
+            }
+        }
+
+        function init() {
+            const savedConfig = localStorage.getItem('ifood_config');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                document.getElementById('apiKey').value = config.apiKey || '';
+                document.getElementById('webhookUrl').value = config.webhookUrl || '';
+            }
+
+            orders = [...DEMO_ORDERS];
+            renderOrders();
+            renderLogs();
+            checkConnection();
+
+            document.getElementById('testWebhook').addEventListener('click', testWebhook);
+            document.getElementById('saveConfig').addEventListener('click', saveConfig);
+
+            setInterval(() => {
+                orders = orders.map(o => ({ ...o, tempo: o.tempo + 1 }));
+                renderOrders();
+            }, 60000);
+        }
+
+init();
+    </script>
+    <!-- Footer -->
+    <div style="position:fixed;bottom:0;left:0;right:0;background:var(--surface);padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border);z-index:100;">
+        <span style="font-size:12px;color:var(--text-muted);">Desenvolvido por <strong style="color:var(--primary);">4dotcom</strong></span>
+        <span style="opacity:0.6">v1.0.0</span>
+    </div>
+    <button onclick="location.href='menu.html'" style="position:fixed;top:15px;left:15px;background:var(--primary);color:white;width:44px;height:44px;border-radius:12px;border:none;font-size:20px;cursor:pointer;z-index:200;">🏠</button>
+</body>
+</html>

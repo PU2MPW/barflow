@@ -1,0 +1,62 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const clientes = getCollection('clientes');
+        
+        if (method === 'GET') {
+            const { telefone } = query;
+            let resultados = [...clientes];
+            
+            if (telefone) resultados = resultados.filter(c => c.telefone === telefone);
+            resultados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            return res.json(resultados);
+        }
+        
+        if (method === 'POST') {
+            const { nome, telefone } = body;
+            if (!nome || !telefone) return res.status(400).json({ error: 'nome e telefone obrigatorios' });
+            
+            const existente = clientes.find(c => c.telefone === telefone);
+            if (existente) return res.status(400).json({ error: 'Cliente ja cadastrado', id: existente.id });
+            
+            const newId = clientes.length > 0 ? Math.max(...clientes.map(c => c.id)) + 1 : 1;
+            const newCliente = { id: newId, nome, telefone, pontos: 0 };
+            clientes.push(newCliente);
+            
+            return res.status(201).json({ id: newId, message: 'Cliente criado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = clientes.findIndex(c => c.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Cliente nao encontrado' });
+            
+            if (body.nome !== undefined) clientes[index].nome = body.nome;
+            if (body.telefone !== undefined) clientes[index].telefone = body.telefone;
+            if (body.pontos !== undefined) clientes[index].pontos = body.pontos;
+            
+            return res.json({ message: 'Cliente atualizado' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = clientes.findIndex(c => c.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Cliente nao encontrado' });
+            
+            clientes.splice(index, 1);
+            return res.json({ message: 'Cliente deletado' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

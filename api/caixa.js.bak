@@ -1,0 +1,168 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+function verificarCaixaAberto(db) {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const caixa_eventos = getCollection('caixa_eventos');
+    const abertura = caixa_eventos
+        .filter(e => e.tipo === 'abertura' && e.created_at && e.created_at.startsWith(hoje))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    
+    if (!abertura) return null;
+    
+    const fechamento = caixa_eventos
+        .filter(e => e.tipo === 'fechamento' && e.created_at && e.created_at.startsWith(hoje) && e.id > abertura.id)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+    
+    return fechamento ? null : abertura;
+}
+
+function calcularSaldo(db, caixaAberto) {
+    if (!caixaAberto) return { saldo: 0, total_sangrias: 0, total_entradas: 0, total_saidas: 0 };
+    
+    const hoje = new Date().toISOString().slice(0, 10);
+    const caixa_eventos = getCollection('caixa_eventos');
+    
+    const eventosFiltrados = caixa_eventos.filter(e => 
+        e.created_at && e.created_at.startsWith(hoje) && new Date(e.created_at) > new Date(caixaAberto.created_at)
+    );
+    
+    const sangrias = eventosFiltrados.filter(e => e.tipo === 'sangria').reduce((sum, e) => sum + (e.valor || 0), 0);
+    const entradas = eventosFiltrados.filter(e => e.tipo === 'entrada').reduce((sum, e) => sum + (e.valor || 0), 0);
+    const saidas = eventosFiltrados.filter(e => e.tipo === 'saida').reduce((sum, e) => sum + (e.valor || 0), 0);
+    const saldo = caixaAberto.valor - sangrias + entradas - saidas;
+    
+    return { saldo, total_sangrias: sangrias, total_entradas: entradas, total_saidas: saidas };
+}
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    const db = getDb();
+    const caixa_eventos = getCollection('caixa_eventos');
+    
+    try {
+        if (method === 'POST' && req.url === '/abrir') {
+            const { valor_inicial, operador_id } = body;
+            
+            if (!valor_inicial || valor_inicial <= 0) {
+                return res.json({ sucesso: false, erro: 'Valor inicial obrigatório' });
+            }
+            
+            const caixaAberto = verificarCaixaAberto(db);
+            if (caixaAberto) {
+                return res.json({ sucesso: false, erro: 'Caixa já está aberto hoje' });
+            }
+            
+            const newId = caixa_eventos.length > 0 ? Math.max(...caixa_eventos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            caixa_eventos.push({ id: newId, tipo: 'abertura', valor: valor_inicial, operador_id: operador_id || null, observacao: 'Abertura do caixa', created_at: now });
+            
+            return res.status(201).json({ sucesso: true, id: newId, valor: valor_inicial });
+        }
+        
+        if (method === 'POST' && req.url === '/sangria') {
+            const { valor, observacao, operador_id } = body;
+            
+            if (!valor || valor <= 0) {
+                return res.json({ sucesso: false, erro: 'Valor obrigatório' });
+            }
+            
+            const caixaAberto = verificarCaixaAberto(db);
+            if (!caixaAberto) {
+                return res.json({ sucesso: false, erro: 'Caixa não está aberto' });
+            }
+            
+            const newId = caixa_eventos.length > 0 ? Math.max(...caixa_eventos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            caixa_eventos.push({ id: newId, tipo: 'sangria', valor, operador_id: operador_id || null, observacao: observacao || 'Sangria', created_at: now });
+            
+            return res.status(201).json({ sucesso: true, valor });
+        }
+        
+        if (method === 'POST' && req.url === '/fechar') {
+            const { valor_final, observacao, operador_id } = body;
+            
+            if (valor_final === undefined) {
+                return res.json({ sucesso: false, erro: 'Valor final obrigatório' });
+            }
+            
+            const caixaAberto = verificarCaixaAberto(db);
+            if (!caixaAberto) {
+                return res.json({ sucesso: false, erro: 'Caixa não está aberto' });
+            }
+            
+            const resultado = valor_final - caixaAberto.valor;
+            
+            const newId = caixa_eventos.length > 0 ? Math.max(...caixa_eventos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            caixa_eventos.push({ id: newId, tipo: 'fechamento', valor: valor_final, operador_id: operador_id || null, observacao: observacao || `Resultado: ${resultado >= 0 ? '+' : ''}${resultado}`, created_at: now });
+            
+            return res.status(201).json({ sucesso: true, valor_inicial: caixaAberto.valor, valor_final, resultado });
+        }
+        
+        if (method === 'POST' && req.url === '/movimento') {
+            const { tipo, valor, categoria, observacao, operador_id } = body;
+            
+            if (!tipo || valor === undefined) {
+                return res.json({ sucesso: false, erro: 'Tipo e valor obrigatórios' });
+            }
+            
+            if (!['entrada', 'saida'].includes(tipo)) {
+                return res.json({ sucesso: false, erro: 'Tipo deve ser entrada ou saida' });
+            }
+            
+            const caixaAberto = verificarCaixaAberto(db);
+            if (!caixaAberto) {
+                return res.json({ sucesso: false, erro: 'Caixa não está aberto' });
+            }
+            
+            const newId = caixa_eventos.length > 0 ? Math.max(...caixa_eventos.map(e => e.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            caixa_eventos.push({ id: newId, tipo, valor, operador_id: operador_id || null, observacao: observacao || categoria, created_at: now });
+            
+            return res.status(201).json({ sucesso: true, tipo, valor });
+        }
+        
+        if (method === 'GET' && req.url === '/status') {
+            const caixaAberto = verificarCaixaAberto(db);
+            
+            if (!caixaAberto) {
+                return res.json({ sucesso: true, aberto: false, saldo_atual: 0 });
+            }
+            
+            const totals = calcularSaldo(db, caixaAberto);
+            
+            return res.json({ 
+                sucesso: true, 
+                aberto: true, 
+                saldo_atual: totals.saldo,
+                hora_abertura: caixaAberto.created_at,
+                valor_inicial: caixaAberto.valor,
+                total_sangrias: totals.total_sangrias,
+                total_entradas: totals.total_entradas,
+                total_saidas: totals.total_saidas
+            });
+        }
+        
+        if (method === 'GET' && req.url.startsWith('/historico')) {
+            const data = query.data || new Date().toISOString().slice(0, 10);
+            
+            const eventos = caixa_eventos.filter(e => e.created_at && e.created_at.startsWith(data));
+            eventos.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            const eventosAgrupados = {};
+            eventos.forEach(e => {
+                const hora = e.created_at.slice(11, 16);
+                if (!eventosAgrupados[hora]) {
+                    eventosAgrupados[hora] = [];
+                }
+                eventosAgrupados[hora].push(e);
+            });
+            
+            return res.json({ sucesso: true, data, eventos, eventos_por_hora: eventosAgrupados });
+        }
+        
+        res.status(404).json({ sucesso: false, erro: 'Endpoint não encontrado' });
+    } catch (error) {
+        res.status(500).json({ sucesso: false, erro: error.message });
+    }
+}

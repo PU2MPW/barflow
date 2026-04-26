@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow KDS - Cozinha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1A1A2E;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --new: #00D9FF;
+            --preparing: #FFB300;
+            --ready: #00C853;
+            --background: #0F0F1A;
+            --surface: #1A1A2E;
+            --surface-light: #252542;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #2D2D4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .kds-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 15px;
+            height: 100vh;
+        }
+
+        .station {
+            background: var(--surface);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .station-header {
+            padding: 15px 20px;
+            background: var(--surface-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .station-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .station-count {
+            background: var(--primary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .station-orders {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .order-card {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 5px solid var(--new);
+            animation: slideIn 0.3s ease;
+        }
+
+        .order-card.new {
+            border-left-color: var(--new);
+        }
+
+        .order-card.preparing {
+            border-left-color: var(--preparing);
+        }
+
+        .order-card.ready {
+            border-left-color: var(--ready);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .order-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .order-timer {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: monospace;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: var(--border);
+        }
+
+        .order-timer.warning {
+            background: var(--warning);
+            color: #000;
+        }
+
+        .order-timer.danger {
+            background: var(--danger);
+            color: white;
+            animation: pulse 0.5s infinite;
+        }
+
+        .order-items {
+            margin-bottom: 15px;
+        }
+
+        .order-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-qty {
+            background: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .item-modifiers {
+            font-size: 13px;
+            color: var(--warning);
+            margin-left: 40px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .order-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .order-btn.start {
+            background: var(--new);
+            color: var(--secondary);
+        }
+
+        .order-btn.complete {
+            background: var(--success);
+            color: white;
+        }
+
+        .order-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* Header */
+        .kds-header {
+            background: var(--surface);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .kds-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .kds-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .kds-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-item.new .stat-value { color: var(--new); }
+        .stat-item.preparing .stat-value { color: var(--preparing); }
+        .stat-item.ready .stat-value { color: var(--success); }
+
+        .kds-time {
+            font-size: 32px;
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        /* Empty State */
+        .empty-station {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .blink {
+            animation: blink 0.5s infinite;
+        }
+
+        /* Audio notification */
+        .sound-toggle {
+            background: var(--surface-light);
+            border: none;
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <header class="kds-header">
+        <div class="kds-logo">
+            <span class="kds-title">🔥 BARFLOW KDS</span>
+        </div>
+        <div class="kds-stats">
+            <div class="stat-item new">
+                <div class="stat-value" id="new-count">3</div>
+                <div class="stat-label">Novos</div>
+            </div>
+            <div class="stat-item preparing">
+                <div class="stat-value" id="preparing-count">2</div>
+                <div class="stat-label">Preparando</div>
+            </div>
+            <div class="stat-item ready">
+                <div class="stat-value" id="ready-count">5</div>
+                <div class="stat-label">Prontos</div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">
+                🔊 Som Ligado
+            </button>
+            <button onclick="location.href='menu.html'" style="background:var(--primary);color:white;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;">🏠 Voltar</button>
+            <div class="kds-time" id="kds-time">00:00</div>
+        </div>
+    </header>
+
+    <div class="kds-container">
+        <!-- Station: Beverages -->
+        <div class="station" data-station="bebidas">
+            <div class="station-header">
+                <div class="station-title">🥤 Bebidas</div>
+                <div class="station-count" id="count-bebidas">2</div>
+            </div>
+            <div class="station-orders" id="orders-bebidas">
+                <!-- Orders will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Station: Lanches -->
+        <div class="station" data-station="lanches">
+            <div class="station-header">
+                <div class="station-title">🍔 Lanches</div>
+                <div class="station-count" id="count-lanches">1</div>
+            </div>
+            <div class="station-orders" id="orders-lanches">
+                <!-- Orders will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Station: Porções -->
+        <div class="station" data-station="porcoes">
+            <div class="station-header">
+                <div class="station-title">🍟 Porções</div>
+                <div class="station-count" id="count-porcoes">1</div>
+            </div>
+            <div class="station-orders" id="orders-porcoes">
+                <!-- Orders will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Station: Churrasco -->
+        <div class="station" data-station="churrasco">
+            <div class="station-header">
+                <div class="station-title">🍖 Churrasco</div>
+                <div class="station-count" id="count-churrasco">0</div>
+            </div>
+            <div class="station-orders" id="orders-churrasco">
+                <div class="empty-station">
+                    <div class="empty-icon">🍖</div>
+                    <p>Nenhum pedido</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let orders = [];
+
+        // Fallback orders
+        const LOCAL_ORDERS = [
+            { id: 247, tipo: 'mesa', status: 'novo', time: 45, itens: [{ qty: 2, nome: 'Refrigerante' }, { qty: 1, nome: 'Cerveja' }] },
+            { id: 248, tipo: 'mesa', status: 'preparando', time: 180, itens: [{ qty: 3, nome: 'Caipirinha' }] },
+            { id: 249, tipo: 'mesa', status: 'novo', time: 30, itens: [{ qty: 1, nome: 'Hambúrguer' }, { qty: 2, nome: 'Batata' }] },
+            { id: 250, tipo: 'mesa', status: 'pronto', time: 240, itens: [{ qty: 1, nome: 'Frango' }] }
+        ];
+
+        async function loadOrders() {
+            try {
+                const res = await fetch(`${API_BASE}/pedidos?status=aberto`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.length > 0) {
+                        orders = data;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log('API indisponível, usando dados locais');
+            }
+            orders = LOCAL_ORDERS;
+        }
+
+        async function updateOrderStatus(id, status) {
+            try {
+                await fetch(`${API_BASE}/pedidos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+            } catch (e) {
+                console.log('Erro ao atualizar');
+            }
+            loadOrders();
+        }
+
+        let soundEnabled = true;
+        let orderTimers = {};
+
+        function init() {
+            loadOrders().then(() => {
+                renderOrders();
+                updateTime();
+                setInterval(updateTime, 1000);
+                setInterval(loadOrders, 10000);
+                startTimers();
+            });
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('kds-time').textContent = 
+                now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderOrders() {
+            const stations = ['bebidas', 'lanches', 'porcoes', 'churrasco'];
+            let newCount = 0, preparingCount = 0, readyCount = 0;
+
+            stations.forEach(station => {
+                const stationOrders = orders.filter(o => o.tipo === station);
+                const container = document.getElementById(`orders-${station}`);
+                const countEl = document.getElementById(`count-${station}`);
+
+                if (stationOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-station">
+                            <div class="empty-icon">✓</div>
+                            <p>Nenhum pedido</p>
+                        </div>
+                    `;
+                    countEl.textContent = '0';
+                    return;
+                }
+
+                container.innerHTML = stationOrders.map(order => {
+                    if (order.status === 'new') newCount++;
+                    if (order.status === 'preparing') preparingCount++;
+                    if (order.status === 'ready') readyCount++;
+
+                    const timerClass = order.time > 300 ? 'danger' : order.time > 180 ? 'warning' : '';
+                    const timerBlink = order.time > 300 ? 'blink' : '';
+
+                    return `
+                        <div class="order-card ${order.status}" data-id="${order.id}">
+                            <div class="order-header">
+                                <div class="order-number">#${order.id}</div>
+                                <div class="order-timer ${timerClass} ${timerBlink}">${formatTime(order.time)}</div>
+                            </div>
+                            <div class="order-items">
+                                ${order.items.map(item => `
+                                    <div class="order-item">
+                                        <span class="item-qty">${item.qty}x</span>
+                                        <span class="item-name">${item.name}</span>
+                                    </div>
+                                    ${item.modifiers ? `<div class="item-modifiers">└ ${item.modifiers}</div>` : ''}
+                                `).join('')}
+                            </div>
+                            <div class="order-actions">
+                                ${order.status === 'new' ? `
+                                    <button class="order-btn start" onclick="startOrder(${order.id})">
+                                        ▶ INICIAR
+                                    </button>
+                                ` : order.status === 'preparing' ? `
+                                    <button class="order-btn complete" onclick="completeOrder(${order.id})">
+                                        ✓ PRONTO
+                                    </button>
+                                ` : `
+                                    <button class="order-btn" style="background: var(--success);" onclick="bumpOrder(${order.id})">
+                                        ⟳ ENTREGUE
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                countEl.textContent = stationOrders.length;
+            });
+
+            document.getElementById('new-count').textContent = newCount;
+            document.getElementById('preparing-count').textContent = preparingCount;
+            document.getElementById('ready-count').textContent = readyCount;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'preparing';
+                renderOrders();
+                playSound('start');
+            }
+        }
+
+        function completeOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'ready';
+                renderOrders();
+                playSound('ready');
+            }
+        }
+
+        function bumpOrder(orderId) {
+            const index = orders.findIndex(o => o.id === orderId);
+            if (index > -1) {
+                orders.splice(index, 1);
+                renderOrders();
+            }
+        }
+
+        function startTimers() {
+            setInterval(() => {
+                orders.forEach(order => {
+                    if (order.status !== 'ready') {
+                        order.time++;
+                    }
+                });
+                renderOrders();
+            }, 1000);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-toggle');
+            btn.textContent = soundEnabled ? '🔊 Som Ligado' : '🔇 Som Mudo';
+            btn.classList.toggle('muted', !soundEnabled);
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            if (type === 'start') {
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+            } else if (type === 'ready') {
+                oscillator.frequency.value = 523.25;
+                oscillator.type = 'sine';
+            }
+            
+            gainNode.gain.value = 0.3;
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                audioContext.close();
+            }, 200);
+        }
+
+        init();
+    </script>
+    
+    <!-- Footer - Desenvolvido por 4dotcom -->
+    <footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 10px; background: var(--surface); color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border); z-index: 100;">
+        <span style="opacity: 0.6;">Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </footer>
+</body>
+</html>

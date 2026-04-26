@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Cardápio Delivery</title>
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --primary-dark: #e55a2b;
+            --success: #00c853;
+            --warning: #ff9100;
+            --danger: #ff1744;
+            --surface: #fff;
+            --background: #f5f5f5;
+            --text: #333;
+            --text-muted: #666;
+            --border: #ddd;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--background); color: var(--text); }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 { font-size: 20px; }
+        .header-btn {
+            background: white;
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            padding: 10px;
+            gap: 10px;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background: var(--background);
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 15px;
+        }
+        
+        .product-card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .product-card:active { transform: scale(0.95); }
+        .product-icon { font-size: 40px; margin-bottom: 10px; }
+        .product-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .product-price { color: var(--primary); font-weight: bold; font-size: 18px; }
+        
+        .qty-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .qty-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .qty-btn:hover { background: var(--primary); color: white; }
+        .qty-value { font-size: 20px; font-weight: bold; min-width: 30px; text-align: center; }
+        
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--success);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .cart-btn {
+            background: white;
+            color: var(--success);
+            padding: 10px 25px;
+            border-radius: 25px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .empty { text-align: center; padding: 50px; color: var(--text-muted); }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: var(--surface);
+            color: var(--text-muted);
+            font-size: 11px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🍔 Cardápio Delivery</h1>
+        <button class="header-btn" onclick="location.href='menu.html'">🏠 Menu</button>
+    </header>
+    
+    <div class="tabs">
+        <button class="tab active" data-cat="all">Todos</button>
+        <button class="tab" data-cat="lanches">🍔 Lanches</button>
+        <button class="tab" data-cat="bebidas">🥤 Bebidas</button>
+        <button class="tab" data-cat="acompanhamentos">🍟 Acomp.</button>
+        <button class="tab" data-cat="sobremesas">🍰 Sobremesas</button>
+        <button class="tab" data-cat="pizzas">🍕 Pizzas</button>
+    </div>
+    
+    <div class="products-grid" id="products-grid">
+        <div class="empty">Carregando produtos...</div>
+    </div>
+    
+    <div class="cart-bar" id="cart-bar" style="display: none;">
+        <div>
+            <span id="cart-items-count">0 itens</span>
+            <span style="margin-left: 10px; font-weight: bold;" id="cart-total">R$ 0,00</span>
+        </div>
+        <button class="cart-btn" onclick="finishOrder()">Ver Carrinho</button>
+    </div>
+    
+    <footer class="footer">
+        <span>Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </footer>
+
+    <script>
+        const API_BASE = '/api';
+        
+        let products = [];
+        let cart = {};
+        let selectedCategory = 'all';
+        
+        async function loadProducts() {
+            try {
+                const res = await fetch(API_BASE + '/produtos');
+                products = await res.json();
+                renderProducts();
+            } catch (e) {
+                document.getElementById('products-grid').innerHTML = '<div class="empty">Erro ao carregar produtos</div>';
+            }
+        }
+        
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            const filtered = selectedCategory === 'all' 
+                ? products 
+                : products.filter(p => p.categoria === selectedCategory);
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty">Nenhum produto nesta categoria</div>';
+                return;
+            }
+            
+            grid.innerHTML = filtered.map(p => `
+                <div class="product-card">
+                    <div class="product-icon">${p.imagem || '🍔'}</div>
+                    <div class="product-name">${p.nome}</div>
+                    <div class="product-price">R$ ${(p.preco || 0).toFixed(2).replace('.', ',')}</div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="changeQty('${p.id}', -1)">-</button>
+                        <span class="qty-value" id="qty-${p.id}">${cart[p.id] || 0}</span>
+                        <button class="qty-btn" onclick="changeQty('${p.id}', 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function changeQty(productId, delta) {
+            const current = cart[productId] || 0;
+            const newValue = Math.max(0, current + delta);
+            if (newValue === 0) {
+                delete cart[productId];
+            } else {
+                cart[productId] = newValue;
+            }
+            document.getElementById(`qty-${productId}`).textContent = newValue;
+            updateCartBar();
+        }
+        
+        function updateCartBar() {
+            const cartBar = document.getElementById('cart-bar');
+            const totalItems = Object.values(cart).reduce((s, qty) => s + qty, 0);
+            
+            if (totalItems === 0) {
+                cartBar.style.display = 'none';
+                return;
+            }
+            
+            const total = products.reduce((sum, p) => {
+                const qty = cart[p.id] || 0;
+                return sum + (p.preco * qty);
+            }, 0);
+            
+            document.getElementById('cart-items-count').textContent = `${totalItems} itens`;
+            document.getElementById('cart-total').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            cartBar.style.display = 'flex';
+        }
+        
+        function finishOrder() {
+            alert('Carrinho: ' + JSON.stringify(cart));
+        }
+        
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                selectedCategory = tab.dataset.cat;
+                renderProducts();
+            });
+        });
+        
+        loadProducts();
+    </script>
+</body>
+</html>

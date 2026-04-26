@@ -1,0 +1,214 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+function tempoSegundos(inicio, fim = new Date().toISOString()) {
+    return Math.floor((new Date(fim) - new Date(inicio)) / 1000);
+}
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    const db = getDb();
+    const pedidos = getCollection('pedidos');
+    const pedido_itens = getCollection('pedido_itens');
+    const produtos = getCollection('produtos');
+    const categorias = getCollection('categorias');
+    const mesas = getCollection('mesas');
+    const kds_logs = getCollection('kds_logs');
+    
+    try {
+        if (method === 'GET' && req.url === '/pedidos') {
+            const status = query.status || 'pendente';
+            let resultados = pedidos.filter(p => p.tipo === 'local' || p.tipo === 'delivery');
+            
+            if (status === 'pendente') {
+                resultados = resultados.filter(p => p.status === 'aberto' || p.status === 'pendente');
+            } else if (status) {
+                resultados = resultados.filter(p => p.status === status);
+            }
+            
+            resultados.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            const resultadosComItens = resultados.map(pedido => {
+                const mesa = mesas.find(m => m.id === pedido.mesa_id);
+                const itens = pedido_itens.filter(i => i.pedido_id === pedido.id).map(item => {
+                    const prod = produtos.find(p => p.id === item.produto_id);
+                    const cat = prod ? categorias.find(c => c.id === prod.categoria_id) : null;
+                    return { ...item, produto_nome: prod?.nome || null, categoria_id: prod?.categoria_id || null, categoria_nome: cat?.nome || null };
+                });
+                return { ...pedido, mesa_numero: mesa?.numero || null, itens };
+            });
+            
+            return res.json({
+                sucesso: true,
+                total: resultadosComItens.length,
+                pedidos: resultadosComItens
+            });
+        }
+        
+        if (method === 'GET' && req.url.startsWith('/pedidos/')) {
+            const id = parseInt(req.url.split('/pedidos/')[1]?.split('/')[0]);
+            
+            if (!id) {
+                return res.status(400).json({ sucesso: false, erro: 'id obrigatorio' });
+            }
+            
+            const pedido = pedidos.find(p => p.id === id);
+            
+            if (!pedido) {
+                return res.status(404).json({ sucesso: false, erro: 'Pedido nao encontrado' });
+            }
+            
+            const mesa = mesas.find(m => m.id === pedido.mesa_id);
+            const itens = pedido_itens.filter(i => i.pedido_id === id).map(item => {
+                const prod = produtos.find(p => p.id === item.produto_id);
+                const cat = prod ? categorias.find(c => c.id === prod.categoria_id) : null;
+                return { ...item, produto_nome: prod?.nome || null, categoria_id: prod?.categoria_id || null, categoria_nome: cat?.nome || null };
+            });
+            
+            return res.json({
+                sucesso: true,
+                pedido: { ...pedido, mesa_numero: mesa?.numero || null, itens }
+            });
+        }
+        
+        if (method === 'POST' && req.url.includes('/iniciar')) {
+            const id = parseInt(req.url.split('/')[2]);
+            
+            if (!id) {
+                return res.status(400).json({ sucesso: false, erro: 'id obrigatorio' });
+            }
+            
+            const index = pedidos.findIndex(p => p.id === id);
+            
+            if (index === -1) {
+                return res.status(404).json({ sucesso: false, erro: 'Pedido nao encontrado' });
+            }
+            
+            if (pedidos[index].status === 'preparando') {
+                return res.status(400).json({ sucesso: false, erro: 'Pedido ja esta em preparo' });
+            }
+            
+            const now = new Date().toISOString();
+            pedidos[index].status = 'preparando';
+            pedidos[index].tempo_inicio = now;
+            
+            const newId = kds_logs.length > 0 ? Math.max(...kds_logs.map(l => l.id)) + 1 : 1;
+            kds_logs.push({ id: newId, pedido_id: id, acao: 'iniciar', tempo_segundos: null, created_at: now });
+            
+            return res.json({
+                sucesso: true,
+                status: 'preparando',
+                tempo_inicio: now,
+                message: 'Pedido iniciado na cozinha'
+            });
+        }
+        
+        if (method === 'POST' && req.url.includes('/pronto')) {
+            const id = parseInt(req.url.split('/')[2]);
+            
+            if (!id) {
+                return res.status(400).json({ sucesso: false, erro: 'id obrigatorio' });
+            }
+            
+            const index = pedidos.findIndex(p => p.id === id);
+            
+            if (index === -1) {
+                return res.status(404).json({ sucesso: false, erro: 'Pedido nao encontrado' });
+            }
+            
+            if (pedidos[index].status !== 'preparando') {
+                return res.status(400).json({ sucesso: false, erro: 'Pedido nao esta em preparo' });
+            }
+            
+            const now = new Date().toISOString();
+            const tempo = pedidos[index].tempo_inicio ? tempoSegundos(pedidos[index].tempo_inicio, now) : null;
+            
+            pedidos[index].status = 'pronto';
+            pedidos[index].tempo_fim = now;
+            
+            const newId = kds_logs.length > 0 ? Math.max(...kds_logs.map(l => l.id)) + 1 : 1;
+            kds_logs.push({ id: newId, pedido_id: id, acao: 'pronto', tempo_segundos: tempo, created_at: now });
+            
+            return res.json({
+                sucesso: true,
+                status: 'pronto',
+                tempo_preparo: tempo,
+                message: 'Pedido marcado como pronto'
+            });
+        }
+        
+        if (method === 'POST' && req.url.includes('/entregue')) {
+            const id = parseInt(req.url.split('/')[2]);
+            
+            if (!id) {
+                return res.status(400).json({ sucesso: false, erro: 'id obrigatorio' });
+            }
+            
+            const index = pedidos.findIndex(p => p.id === id);
+            
+            if (index === -1) {
+                return res.status(404).json({ sucesso: false, erro: 'Pedido nao encontrado' });
+            }
+            
+            const now = new Date().toISOString();
+            const tempo = pedidos[index].tempo_inicio ? tempoSegundos(pedidos[index].tempo_inicio, now) : null;
+            
+            pedidos[index].status = 'entregue';
+            pedidos[index].tempo_fim = now;
+            
+            if (pedidos[index].tempo_inicio) {
+                const newId = kds_logs.length > 0 ? Math.max(...kds_logs.map(l => l.id)) + 1 : 1;
+                kds_logs.push({ id: newId, pedido_id: id, acao: 'entregue', tempo_segundos: tempo, created_at: now });
+            }
+            
+            return res.json({
+                sucesso: true,
+                status: 'entregue',
+                tempo_total: tempo,
+                message: 'Pedido markado como entregue'
+            });
+        }
+        
+        if (method === 'GET' && req.url === '/tempo-medio') {
+            const agora = new Date();
+            const h24 = new Date(agora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+            
+            const logsFiltrados = kds_logs.filter(l => l.acao === 'pronto' && l.tempo_segundos != null && l.created_at && l.created_at >= h24);
+            const tempoMedio = logsFiltrados.length > 0 
+                ? logsFiltrados.reduce((sum, l) => sum + l.tempo_segundos, 0) / logsFiltrados.length 
+                : 0;
+            
+            return res.json({
+                sucesso: true,
+                tempo_medio: Math.round(tempoMedio),
+                unidade: 'segundos'
+            });
+        }
+        
+        if (method === 'GET' && req.url === '/dashboard') {
+            const pendentes = pedidos.filter(p => (p.status === 'aberto' || p.status === 'pendente') && (p.tipo === 'local' || p.tipo === 'delivery')).length;
+            const preparando = pedidos.filter(p => p.status === 'preparando').length;
+            const prontos = pedidos.filter(p => p.status === 'pronto').length;
+            
+            const agora = new Date();
+            const h24 = new Date(agora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+            const logsFiltrados = kds_logs.filter(l => l.acao === 'pronto' && l.tempo_segundos != null && l.created_at && l.created_at >= h24);
+            const tempoMedio = logsFiltrados.length > 0 
+                ? logsFiltrados.reduce((sum, l) => sum + l.tempo_segundos, 0) / logsFiltrados.length 
+                : 0;
+            
+            return res.json({
+                sucesso: true,
+                pendentes,
+                preparando,
+                prontos,
+                tempo_medio: Math.round(tempoMedio)
+            });
+        }
+        
+        res.status(404).json({ sucesso: false, erro: 'Endpoint nao encontrado' });
+    } catch (error) {
+        console.error('KDS Error:', error);
+        res.status(500).json({ sucesso: false, erro: error.message });
+    }
+}

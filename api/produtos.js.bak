@@ -1,0 +1,81 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const produtos = getCollection('produtos');
+        const categorias = getCollection('categorias');
+        
+        if (method === 'GET') {
+            const { categoria, ativo } = query;
+            let resultados = [...produtos];
+            
+            if (categoria) {
+                resultados = resultados.filter(p => p.categoria_id == categoria);
+            }
+            if (ativo !== undefined) {
+                resultados = resultados.filter(p => p.ativo == ativo);
+            }
+            
+            resultados.sort((a, b) => {
+                const ordA = a.categoria?.ordem || 0;
+                const ordB = b.categoria?.ordem || 0;
+                if (ordA !== ordB) return ordA - ordB;
+                return (a.nome || '').localeCompare(b.nome || '');
+            });
+            
+            const resultadosComCategoria = resultados.map(p => {
+                const cat = categorias.find(c => c.id === p.categoria_id);
+                return { ...p, categoria_nome: cat?.nome || null };
+            });
+            
+            return res.json(resultadosComCategoria);
+        }
+        
+        if (method === 'POST') {
+            const { categoria_id, nome, preco, imagem } = body;
+            if (!nome || preco === undefined) {
+                return res.status(400).json({ error: 'nome e preco obrigatorios' });
+            }
+            
+            const newId = produtos.length > 0 ? Math.max(...produtos.map(p => p.id)) + 1 : 1;
+            const newProduto = { id: newId, categoria_id: categoria_id || null, nome, preco, imagem: imagem || null, ativo: 1 };
+            produtos.push(newProduto);
+            
+            return res.status(201).json({ id: newId, message: 'Produto criado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = produtos.findIndex(p => p.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Produto nao encontrado' });
+            
+            if (body.categoria_id !== undefined) produtos[index].categoria_id = body.categoria_id;
+            if (body.nome !== undefined) produtos[index].nome = body.nome;
+            if (body.preco !== undefined) produtos[index].preco = body.preco;
+            if (body.imagem !== undefined) produtos[index].imagem = body.imagem;
+            if (body.ativo !== undefined) produtos[index].ativo = body.ativo;
+            
+            return res.json({ message: 'Produto atualizado' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = produtos.findIndex(p => p.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Produto nao encontrado' });
+            
+            produtos.splice(index, 1);
+            return res.json({ message: 'Produto deletado' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

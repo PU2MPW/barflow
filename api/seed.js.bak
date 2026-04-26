@@ -1,0 +1,131 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Metodo nao permitido' });
+    }
+
+    try {
+        const db = getDb();
+        const produtos = getCollection('produtos');
+        
+        if (produtos.length > 0) {
+            return res.json({ 
+                message: 'Seed ja executado', 
+                items: produtos.length,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        const empresas = [];
+        const categorias = [];
+        const mesas = [];
+        const entregadores = [];
+        const cupons = [];
+
+        const newId = 1;
+        empresas.push({ id: newId, nome: 'BarFlow Bar e Restaurante', cnpj: '12.345.678/0001-90', telefone: '(11) 99999-9999' });
+
+        setData('empresa', empresas);
+
+        const catList = [
+            { nome: 'Bebidas', icone: '🥤', ordem: 1 },
+            { nome: 'Lanches', icone: '🍔', ordem: 2 },
+            { nome: 'Porções', icone: '🍟', ordem: 3 },
+            { nome: 'Sobremesas', icone: '🍰', ordem: 4 },
+            { nome: 'Alcoólicas', icone: '🍺', ordem: 5 },
+            { nome: 'Cafés', icone: '☕', ordem: 6 }
+        ];
+        
+        catList.forEach((cat, idx) => {
+            categorias.push({ id: idx + 1, ...cat });
+        });
+        setData('categorias', categorias);
+
+        const prodList = [
+            { categoria_id: 1, nome: 'Café Pequeno', preco: 5.90 },
+            { categoria_id: 1, nome: 'Café Médio', preco: 7.90 },
+            { categoria_id: 1, nome: 'Refrigerante', preco: 6.90 },
+            { categoria_id: 1, nome: 'Suco Natural', preco: 8.90 },
+            { categoria_id: 1, nome: 'Água', preco: 4.90 },
+            { categoria_id: 2, nome: 'Hambúrguer', preco: 19.90 },
+            { categoria_id: 2, nome: 'X-Burger', preco: 17.90 },
+            { categoria_id: 2, nome: 'X-Bacon', preco: 21.90 },
+            { categoria_id: 2, nome: 'Hot Dog', preco: 15.90 },
+            { categoria_id: 3, nome: 'Batata Frita', preco: 15.90 },
+            { categoria_id: 3, nome: 'Batata Rústica', preco: 19.90 },
+            { categoria_id: 3, nome: 'Onion Rings', preco: 16.90 },
+            { categoria_id: 4, nome: 'Pudim', preco: 10.90 },
+            { categoria_id: 4, nome: 'Sorvete', preco: 12.90 },
+            { categoria_id: 4, nome: 'Brownie', preco: 13.90 },
+            { categoria_id: 5, nome: 'Cerveja Lata', preco: 7.90 },
+            { categoria_id: 5, nome: 'Cerveja Long', preco: 10.90 },
+            { categoria_id: 5, nome: 'Caipirinha', preco: 16.90 },
+            { categoria_id: 6, nome: 'Cappuccino', preco: 8.90 },
+            { categoria_id: 6, nome: 'Latte', preco: 9.90 }
+        ];
+        
+        prodList.forEach((prod, idx) => {
+            produtos.push({ id: idx + 1, ...prod, ativo: 1 });
+        });
+        setData('produtos', produtos);
+
+        const mesaList = [
+            { numero: '01', capacidade: 4 },
+            { numero: '02', capacidade: 4 },
+            { numero: '03', capacidade: 4 },
+            { numero: '04', capacidade: 4 },
+            { numero: '05', capacidade: 4 },
+            { numero: '06', capacidade: 4 },
+            { numero: '07', capacidade: 4 },
+            { numero: '08', capacidade: 4 },
+            { numero: '09', capacidade: 4 },
+            { numero: '10', capacidade: 4 }
+        ];
+        
+        mesaList.forEach((m, idx) => {
+            mesas.push({ id: idx + 1, ...m, status: 'disponivel' });
+        });
+        setData('mesas', mesas);
+
+        const entrList = [
+            { nome: 'João Silva', telefone: '(11) 99999-0001', tipo_veiculo: 'Moto' },
+            { nome: 'Maria Santos', telefone: '(11) 99999-0002', tipo_veiculo: 'Bike' },
+            { nome: 'Pedro Oliveira', telefone: '(11) 99999-0003', tipo_veiculo: 'Carro' }
+        ];
+        
+        entrList.forEach((e, idx) => {
+            entregadores.push({ id: idx + 1, ...e, ativo: 1 });
+        });
+        setData('entregadores', entregadores);
+
+        const cupomList = [
+            { codigo: 'PRIMEIRACOMPRA', tipo: 'porcentagem', valor: 10 },
+            { codigo: 'FIDELIDADE', tipo: 'porcentagem', valor: 5 },
+            { codigo: 'PROMO15', tipo: 'porcentagem', valor: 15 },
+            { codigo: 'BARFLOW', tipo: 'fixo', valor: 10 },
+            { codigo: 'VIP', tipo: 'porcentagem', valor: 20 }
+        ];
+        
+        cupomList.forEach((c, idx) => {
+            cupons.push({ id: idx + 1, ...c, ativo: 1 });
+        });
+        setData('cupons', cupons);
+
+        return res.json({
+            message: 'Seed executado com sucesso',
+            data: {
+                empresa: 1,
+                categorias: 6,
+                produtos: 20,
+                mesas: 10,
+                entregadores: 3,
+                cupons: 5
+            },
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}

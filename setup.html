@@ -178,90 +178,78 @@
                 <span class="step-title">Módulos do Sistema</span>
             </div>
             
-            <div class="checkbox-group">
-                <label class="checkbox-item selected" onclick="toggleCheck(this)">
-                    <input type="checkbox" checked data-module="pdv">
+<div class="checkbox-group">
+                <div class="checkbox-item selected" data-module="pdv" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🛒</span>
                     <span class="checkbox-label">PDV</span>
-                    <span class="checkbox-check"></span>
-                </label>
+                    <span class="checkbox-check">✓</span>
+                </div>
                 
-                <label class="checkbox-item selected" onclick="toggleCheck(this)">
-                    <input type="checkbox" checked data-module="mesas">
+                <div class="checkbox-item selected" data-module="mesas" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🪑</span>
                     <span class="checkbox-label">Mesas</span>
-                    <span class="checkbox-check"></span>
-                </label>
+                    <span class="checkbox-check">✓</span>
+                </div>
                 
-                <label class="checkbox-item selected" onclick="toggleCheck(this)">
-                    <input type="checkbox" checked data-module="kds">
+                <div class="checkbox-item selected" data-module="kds" onclick="toggleModule(this)">
                     <span class="checkbox-icon">👨‍🍳</span>
                     <span class="checkbox-label">Cozinha (KDS)</span>
-                    <span class="checkbox-check"></span>
-                </label>
+                    <span class="checkbox-check">✓</span>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="garcom">
+                <div class="checkbox-item" data-module="garcom" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🍽️</span>
                     <span class="checkbox-label">App Garçom</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="cardapio">
+                <div class="checkbox-item" data-module="cardapio" onclick="toggleModule(this)">
                     <span class="checkbox-icon">📱</span>
                     <span class="checkbox-label">Cardápio Digital</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="delivery">
+                <div class="checkbox-item" data-module="delivery" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🛵</span>
                     <span class="checkbox-label">Delivery</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="ifood">
+                <div class="checkbox-item" data-module="ifood" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🍔</span>
                     <span class="checkbox-label">iFood</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="estoque">
+                <div class="checkbox-item" data-module="estoque" onclick="toggleModule(this)">
                     <span class="checkbox-icon">📦</span>
                     <span class="checkbox-label">Estoque</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="financeiro">
+                <div class="checkbox-item" data-module="financeiro" onclick="toggleModule(this)">
                     <span class="checkbox-icon">💰</span>
                     <span class="checkbox-label">Financeiro</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="fidelidade">
+                <div class="checkbox-item" data-module="fidelidade" onclick="toggleModule(this)">
                     <span class="checkbox-icon">🎁</span>
                     <span class="checkbox-label">Fidelidade</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="reservas">
+                <div class="checkbox-item" data-module="reservas" onclick="toggleModule(this)">
                     <span class="checkbox-icon">📅</span>
                     <span class="checkbox-label">Reservas</span>
                     <span class="checkbox-check"></span>
-                </label>
+                </div>
                 
-                <label class="checkbox-item" onclick="toggleCheck(this)">
-                    <input type="checkbox" data-module="dashboard">
+                <div class="checkbox-item selected" data-module="dashboard" onclick="toggleModule(this)">
                     <span class="checkbox-icon">📊</span>
                     <span class="checkbox-label">Dashboard</span>
-                    <span class="checkbox-check"></span>
-                </label>
+                    <span class="checkbox-check">✓</span>
+                </div>
             </div>
             
             <div class="btn-group">
@@ -339,9 +327,18 @@
         let currentStep = 1;
         const totalSteps = 4;
         
+        function toggleModule(el) {
+            el.classList.toggle('selected');
+            const check = el.querySelector('.checkbox-check');
+            if (check) {
+                check.textContent = el.classList.contains('selected') ? '✓' : '';
+            }
+        }
+        
         function toggleCheck(el) {
             el.classList.toggle('selected');
             const input = el.querySelector('input');
+            if (!input) return;
             input.checked = el.classList.contains('selected');
         }
         
@@ -392,7 +389,7 @@
             };
             
             const modulos = [];
-            document.querySelectorAll('.checkbox-item.selected input[data-module]').forEach(el => {
+            document.querySelectorAll('.checkbox-item.selected[data-module]').forEach(el => {
                 modulos.push(el.dataset.module);
             });
             

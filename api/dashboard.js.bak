@@ -1,0 +1,93 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query } = req;
+    
+    try {
+        const db = getDb();
+        const pedidos = getCollection('pedidos');
+        const pedido_itens = getCollection('pedido_itens');
+        const produtos = getCollection('produtos');
+        const categorias = getCollection('categorias');
+        const mesas = getCollection('mesas');
+        const clientes = getCollection('clientes');
+        
+        if (method !== 'GET') {
+            return res.status(405).json({ error: 'Metodo nao permitido' });
+        }
+        
+        const { data_inicio, data_fim } = query;
+        const hoje = new Date().toISOString().split('T')[0];
+        const inicio = data_inicio || hoje + ' 00:00:00';
+        const fim = data_fim || hoje + ' 23:59:59';
+        
+        const pedidosFinalizados = pedidos.filter(p => 
+            p.status === 'finalizado' && p.created_at && p.created_at >= inicio && p.created_at <= fim
+        );
+        
+        const faturamento = pedidosFinalizados.reduce((sum, p) => sum + (p.total || 0), 0);
+        const pedidosCount = pedidosFinalizados.length;
+        const pedidosAbertos = pedidos.filter(p => p.status === 'aberto' || p.status === 'pendente').length;
+        
+        const ticketMedio = pedidosCount > 0 ? faturamento / pedidosCount : 0;
+        
+        const itensFiltrados = pedido_itens.filter(pi => {
+            const pedido = pedidos.find(p => p.id === pi.pedido_id);
+            return pedido && pedido.status === 'finalizado' && pedido.created_at && pedido.created_at >= inicio && pedido.created_at <= fim;
+        });
+        
+        const porCategoria = {};
+        itensFiltrados.forEach(item => {
+            const prod = produtos.find(p => p.id === item.produto_id);
+            if (prod) {
+                const cat = categorias.find(c => c.id === prod.categoria_id);
+                const nome = cat?.nome || 'Sem categoria';
+                if (!porCategoria[nome]) {
+                    porCategoria[nome] = { nome, quantidade: 0, valor: 0 };
+                }
+                porCategoria[nome].quantidade += item.quantidade || 0;
+                porCategoria[nome].valor += (item.quantidade || 0) * (item.preco_unitario || 0);
+            }
+        });
+        
+        const porDiaObj = {};
+        pedidosFinalizados.forEach(pedido => {
+            const dia = pedido.created_at ? pedido.created_at.split('T')[0] : hoje;
+            if (!porDiaObj[dia]) {
+                porDiaObj[dia] = { dia, valor: 0, pedidos: 0 };
+            }
+            porDiaObj[dia].valor += pedido.total || 0;
+            porDiaObj[dia].pedidos += 1;
+        });
+        
+        const produtosTop = {};
+        itensFiltrados.forEach(item => {
+            const prod = produtos.find(p => p.id === item.produto_id);
+            if (prod) {
+                if (!produtosTop[prod.nome]) {
+                    produtosTop[prod.nome] = { nome: prod.nome, quantidade: 0 };
+                }
+                produtosTop[prod.nome].quantidade += item.quantidade || 0;
+            }
+        });
+        
+        const totalMesas = mesas.length;
+        const mesasOcupadas = mesas.filter(m => m.status === 'ocupada').length;
+        const totalClientes = clientes.length;
+        
+        return res.json({
+            periodo: { inicio, fim },
+            faturamento,
+            pedidos: pedidosCount,
+            pedidos_abertos: pedidosAbertos,
+            ticket_medio: Math.round(ticketMedio * 100) / 100,
+            por_categoria: Object.values(porCategoria).sort((a, b) => b.valor - a.valor),
+            por_dia: Object.values(porDiaObj).sort((a, b) => b.dia.localeCompare(a.dia)).slice(0, 30),
+            produtos_top: Object.values(produtosTop).sort((a, b) => b.quantidade - a.quantidade).slice(0, 10),
+            mesas: { total: totalMesas, ocupadas: mesasOcupadas },
+            clientes_cadastrados: totalClientes
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Fechamento de Caixa</title>
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --primary-dark: #e55a2b;
+            --success: #00c853;
+            --warning: #ff9100;
+            --danger: #ff1744;
+            --surface: #fff;
+            --background: #f5f5f5;
+            --text: #333;
+            --text-muted: #666;
+            --border: #ddd;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--background); color: var(--text); }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 20px; }
+        
+        .card {
+            background: var(--surface);
+            margin: 15px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .info-label { color: var(--text-muted); }
+        .info-value { font-weight: bold; }
+        
+        .money-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--background);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .money-label { font-weight: 600; }
+        .money-input {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: right;
+            font-size: 16px;
+        }
+        .money-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .totals-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 15px;
+        }
+        .total-label { font-size: 14px; opacity: 0.9; }
+        .total-value { font-size: 32px; font-weight: bold; }
+        
+        .result-box {
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .result-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .result-danger {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .btn-primary {
+            width: calc(100% - 30px);
+            margin: 15px;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-secondary {
+            width: calc(100% - 30px);
+            margin: 15px;
+            margin-top: 0;
+            padding: 15px;
+            background: var(--surface);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        .obs-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: var(--surface);
+            color: var(--text-muted);
+            font-size: 11px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>💰 Fechamento de Caixa</h1>
+    </header>
+    
+    <div id="caixa-info">
+        <div class="card">
+            <div class="card-title">📊 Informações do Caixa</div>
+            <div class="info-row">
+                <span class="info-label">Operador:</span>
+                <span class="info-value" id="operador">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Abertura:</span>
+                <span class="info-value" id="abertura">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Valor Inicial:</span>
+                <span class="info-value" id="valor-inicial">R$ 0,00</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Vendas:</span>
+                <span class="info-value" id="total-vendas">R$ 0,00</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Sangrias:</span>
+                <span class="info-value" id="total-sangrias">R$ 0,00</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Suprimentos:</span>
+                <span class="info-value" id="total-suprimentos">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">💵 Contagem de Dinheiro</div>
+        
+        <div class="money-row">
+            <span class="money-label">R$ 200</span>
+            <input type="number" class="money-input" id="nota-200" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 100</span>
+            <input type="number" class="money-input" id="nota-100" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 50</span>
+            <input type="number" class="money-input" id="nota-50" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 20</span>
+            <input type="number" class="money-input" id="nota-20" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 10</span>
+            <input type="number" class="money-input" id="nota-10" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 5</span>
+            <input type="number" class="money-input" id="nota-5" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        <div class="money-row">
+            <span class="money-label">R$ 2</span>
+            <input type="number" class="money-input" id="nota-2" value="0" min="0" onchange="calcularTotal()">
+        </div>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--primary);">
+            <div class="money-row">
+                <span class="money-label">Moedas (total)</span>
+                <input type="number" class="money-input" id="moedas" value="0" min="0" step="0.01" onchange="calcularTotal()">
+            </div>
+        </div>
+    </div>
+    
+    <div class="totals-box">
+        <div class="total-label">Valor Esperado em Caixa</div>
+        <div class="total-value" id="valor-esperado">R$ 0,00</div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">📝 Observações</div>
+        <textarea class="obs-input" id="obs" rows="3" placeholder="Observações do fechamento..."></textarea>
+    </div>
+    
+    <div class="result-box" id="resultado">
+        Diferença: R$ 0,00
+    </div>
+    
+    <button class="btn-primary" onclick="fecharCaixa()">✅ Confirmar Fechamento</button>
+    <button class="btn-secondary" onclick="location.href='menu.html'">Cancelar</button>
+    
+    <footer class="footer">
+        <span>Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </footer>
+
+    <script>
+        let caixa = JSON.parse(localStorage.getItem('caixaAberto')) || null;
+        
+        if (!caixa) {
+            alert('Caixa não está aberto! Abra o caixa primeiro.');
+            window.location.href = 'login-caixa.html';
+        }
+        
+        // Preencher info
+        document.getElementById('operador').textContent = caixa.operador;
+        document.getElementById('abertura').textContent = new Date(caixa.abertura).toLocaleString('pt-BR');
+        document.getElementById('valor-inicial').textContent = 'R$ ' + caixa.valorInicial.toFixed(2);
+        
+        // Calcular vendas (simulado - viria da API)
+        const totalVendas = (caixa.vendas || []).reduce((s, v) => s + v.total, 0);
+        const totalSangrias = (caixa.sangrias || []).reduce((s, s) => s + s.valor, 0);
+        const totalSuprimentos = (caixa.suprimentos || []).reduce((s, s) => s + s.valor, 0);
+        
+        document.getElementById('total-vendas').textContent = 'R$ ' + totalVendas.toFixed(2);
+        document.getElementById('total-sangrias').textContent = 'R$ ' + totalSangrias.toFixed(2);
+        document.getElementById('total-suprimentos').textContent = 'R$ ' + totalSuprimentos.toFixed(2);
+        
+        // Valor esperado
+        const valorEsperado = caixa.valorInicial + totalVendas - totalSangrias + totalSuprimentos;
+        document.getElementById('valor-esperado').textContent = 'R$ ' + valorEsperado.toFixed(2);
+        
+        function calcularTotal() {
+            const notas = {
+                200: parseInt(document.getElementById('nota-200').value) || 0,
+                100: parseInt(document.getElementById('nota-100').value) || 0,
+                50: parseInt(document.getElementById('nota-50').value) || 0,
+                20: parseInt(document.getElementById('nota-20').value) || 0,
+                10: parseInt(document.getElementById('nota-10').value) || 0,
+                5: parseInt(document.getElementById('nota-5').value) || 0,
+                2: parseInt(document.getElementById('nota-2').value) || 0
+            };
+            
+            let total = 0;
+            for (let nota in notas) {
+                total += notas[nota] * parseInt(nota);
+            }
+            
+            total += parseFloat(document.getElementById('moedas').value) || 0;
+            
+            const diferenca = total - valorEsperado;
+            
+            document.getElementById('resultado').className = 'result-box ' + (diferenca >= 0 ? 'result-success' : 'result-danger');
+            document.getElementById('resultado').innerHTML = 
+                diferenca >= 0 
+                    ? '✅ Sobra: R$ ' + diferenca.toFixed(2)
+                    : '⚠️ Falta: R$ ' + Math.abs(diferenca).toFixed(2);
+        }
+        
+        function fecharCaixa() {
+            const obs = document.getElementById('obs').value;
+            const diferenca = parseFloat(document.getElementById('resultado').textContent.replace('R$ ', '').replace('✅ Sobra: ', '').replace('⚠️ Falta: ', '')) || 0;
+            
+            if (!confirm('Confirmar fechamento do caixa?\n\nDiferença: R$ ' + diferenca.toFixed(2))) {
+                return;
+            }
+            
+            const fechamento = {
+                ...caixa,
+                fechamento: new Date().toISOString(),
+                observacoes: obs,
+                diferenca: diferenca,
+                status: 'fechado'
+            };
+            
+            // Salvar histórico
+            const historico = JSON.parse(localStorage.getItem('fechamentos') || '[]');
+            historico.push(fechamento);
+            localStorage.setItem('fechamentos', JSON.stringify(historico));
+            
+            // Limpar caixa atual
+            localStorage.removeItem('caixaAberto');
+            
+            alert('✅ Caixa fechado com sucesso!\n\nResumo:\n- Diferença: R$ ' + diferenca.toFixed(2) + '\n- Operador: ' + caixa.operador);
+            
+            window.location.href = 'menu.html';
+        }
+    </script>
+</body>
+</html>

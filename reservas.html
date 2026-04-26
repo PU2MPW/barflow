@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Reservas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1A1A2E;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --background: #0F0F1A;
+            --surface: #1A1A2E;
+            --surface-light: #252542;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #2D2D4A;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            background: var(--surface-light);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover { background: var(--border); }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .header-date {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            background: var(--surface);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--surface-light);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .stat-card:nth-child(2) .stat-value { color: var(--success); }
+        .stat-card:nth-child(3) .stat-value { color: var(--warning); }
+
+        /* Calendar */
+        .calendar-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-nav-btn {
+            background: var(--surface-light);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calendar-nav-btn:hover { background: var(--border); }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-light);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .calendar-day:hover { background: var(--border); }
+        
+        .calendar-day.other-month { opacity: 0.3; }
+        
+        .calendar-day.today {
+            border: 2px solid var(--accent);
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+        }
+
+        .calendar-day.has-reservation::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Reservations List */
+        .reservations-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .reservations-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .reservations-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .reservations-date {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .reservations-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .reservation-card {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reservation-card:hover { transform: translateX(5px); }
+
+        .reservation-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .reservation-time {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .reservation-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-confirmada { background: rgba(0,200,83,0.2); color: var(--success); }
+        .status-no-local { background: rgba(0,217,255,0.2); color: var(--accent); }
+        .status-finalizada { background: rgba(158,158,184,0.2); color: var(--text-muted); }
+        .status-cancelada { background: rgba(255,23,68,0.2); color: var(--danger); }
+
+        .reservation-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reservation-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .reservation-details {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .reservation-detail {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .whatsapp-link {
+            color: var(--success);
+            text-decoration: none;
+        }
+
+        .reservation-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .reservation-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirmar { background: rgba(0,200,83,0.2); color: var(--success); }
+        .btn-confirmar:hover { background: var(--success); color: var(--background); }
+
+        .btn-chegar { background: rgba(0,217,255,0.2); color: var(--accent); }
+        .btn-chegar:hover { background: var(--accent); color: var(--background); }
+
+        .btn-cancelar { background: rgba(255,23,68,0.2); color: var(--danger); }
+        .btn-cancelar:hover { background: var(--danger); color: var(--text); }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: var(--surface-light);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .time-slot {
+            padding: 12px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .time-slot:hover { border-color: var(--primary); }
+        .time-slot.selected { background: var(--primary); border-color: var(--primary); }
+        .time-slot.unavailable { opacity: 0.4; cursor: not-allowed; }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 14px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover { background: var(--border); }
+
+        /* Details Modal */
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-label { color: var(--text-muted); font-size: 13px; }
+        .detail-value { font-weight: 500; font-size: 14px; }
+
+        .history-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .history-content { flex: 1; }
+        .history-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .history-time { font-size: 12px; color: var(--text-muted); }
+
+        /* Settings */
+        .settings-panel {
+            position: absolute;
+            right: 0;
+            top: 60px;
+            width: 350px;
+            height: calc(100vh - 60px);
+            background: var(--surface);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .settings-panel.active { transform: translateX(0); }
+
+        /* Notifications Toast */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--surface);
+            padding: 16px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toastIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes toastIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-success { border-left: 4px solid var(--success); }
+        .toast-error { border-left: 4px solid var(--danger); }
+        .toast-warning { border-left: 4px solid var(--warning); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .dashboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h1 class="page-title">Reservas</h1>
+                    <p class="header-date" id="currentDate"></p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="back-btn" onclick="toggleSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn-primary" onclick="openNewReservationModal()">
+                    <i class="fas fa-plus"></i>
+                    Nova Reserva
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="left-panel">
+                <div class="dashboard">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalHoje">0</div>
+                        <div class="stat-label">Total Hoje</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="confirmadas">0</div>
+                        <div class="stat-label">Confirmadas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="ocupacao">0%</div>
+                        <div class="stat-label">Ocupação</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <h3 class="calendar-title" id="calendarTitle">Abril 2026</h3>
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" onclick="changeMonth(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="calendar-nav-btn" onclick="changeMonth(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+
+            <div class="reservations-section">
+                <div class="reservations-header">
+                    <h3 class="reservations-title">Reservas do Dia</h3>
+                    <p class="reservations-date" id="selectedDateDisplay"></p>
+                </div>
+                <div class="reservations-list" id="reservationsList">
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-check empty-icon"></i>
+                        <p>Nenhuma reserva para esta data</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Nova Reserva Modal -->
+    <div class="modal-overlay" id="newReservationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Nova Reserva</h3>
+                <button class="modal-close" onclick="closeModal('newReservationModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nome do Cliente</label>
+                    <input type="text" class="form-input" id="reservaNome" placeholder="Nome completo">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefone</label>
+                    <input type="tel" class="form-input" id="reservaTelefone" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Data</label>
+                        <input type="date" class="form-input" id="reservaData">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pessoas</label>
+                        <select class="form-select" id="reservaPessoas">
+                            <option value="1">1 pessoa</option>
+                            <option value="2" selected>2 pessoas</option>
+                            <option value="3">3 pessoas</option>
+                            <option value="4">4 pessoas</option>
+                            <option value="5">5 pessoas</option>
+                            <option value="6">6 pessoas</option>
+                            <option value="7">7 pessoas</option>
+                            <option value="8">8 pessoas</option>
+                            <option value="9+">9+ pessoas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Horário</label>
+                    <div class="time-slots" id="timeSlots"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mesa Preferida (Opcional)</label>
+                    <select class="form-select" id="reservaMesa">
+                        <option value="">Sem preferência</option>
+                        <option value="1">Mesa 1</option>
+                        <option value="2">Mesa 2</option>
+                        <option value="3">Mesa 3</option>
+                        <option value="4">Mesa 4</option>
+                        <option value="5">Mesa 5</option>
+                        <option value="6">Mesa 6</option>
+                        <option value="7">Mesa 7</option>
+                        <option value="8">Mesa 8</option>
+                        <option value=" Externo">Terraço</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Observações</label>
+                    <textarea class="form-textarea" id="reservaObs" placeholder="Observações especiais..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('newReservationModal')">Cancelar</button>
+                <button class="btn-primary" style="flex:1" onclick="saveReservation()">Salvar Reserva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalhes Reserva Modal -->
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Detalhes da Reserva</h3>
+                <button class="modal-close" onclick="closeModal('detailsModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-section">
+                    <div class="detail-row">
+                        <span class="detail-label">Cliente</span>
+                        <span class="detail-value" id="detailNome">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Telefone</span>
+                        <span class="detail-value" id="detailTelefone">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Data</span>
+                        <span class="detail-value" id="detailData">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Horário</span>
+                        <span class="detail-value" id="detailHora">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Pessoas</span>
+                        <span class="detail-value" id="detailPessoas">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Mesa</span>
+                        <span class="detail-value" id="detailMesa">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value" id="detailStatus">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Observações</span>
+                        <span class="detail-value" id="detailObs">-</span>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4 class="detail-section-title">Histórico</h4>
+                    <div id="detailHistory"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="reservation-btn btn-cancelar" onclick="cancelReservation()">Cancelar</button>
+                <button class="reservation-btn btn-chegar" onclick="confirmArrival()">Chegada</button>
+                <button class="reservation-btn btn-confirmar" onclick="confirmReservation()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="modal-header">
+            <h3 class="modal-title">Configurações</h3>
+            <button class="modal-close" onclick="toggleSettings()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Horário de Funcionamento</label>
+                <div class="form-row">
+                    <input type="time" class="form-input" id="configHoraInicio" value="18:00">
+                    <input type="time" class="form-input" id="configHoraFim" value="23:00">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Duração por Reserva</label>
+                <select class="form-select" id="configDuracao">
+                    <option value="30">30 minutos</option>
+                    <option value="60" selected>1 hora</option>
+                    <option value="90">1h 30min</option>
+                    <option value="120">2 horas</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Capacidade Máxima</label>
+                <input type="number" class="form-input" id="configCapacidade" value="50">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Automensagem WhatsApp</label>
+                <textarea class="form-textarea" id="configMensagem">Olá {nome}! Sua reserva no BarFlow para {data} às {hora} está confirmada. {pessoas} pessoas. Em caso de alteração, responda esta mensagem.</textarea>
+            </div>
+            <button class="btn-primary" style="width:100%; margin-top:10px" onclick="saveSettings()">
+                <i class="fas fa-save"></i>
+                Salvar Configurações
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // State
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let reservations = [];
+        let selectedReservation = null;
+        let selectedTimeSlot = null;
+
+        const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            renderCurrentDate();
+            renderCalendar();
+            loadReservations();
+            generateTimeSlots();
+        });
+
+        function renderCurrentDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', options);
+            document.getElementById('selectedDateDisplay').textContent = formatDate(selectedDate);
+            document.getElementById('reservaData').value = formatDateISO(selectedDate);
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const title = document.getElementById('calendarTitle');
+            
+            title.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+            grid.innerHTML = '';
+
+            // Day headers
+            daysOfWeek.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startPadding = firstDay.getDay();
+            const today = new Date();
+
+            // Previous month padding
+            for (let i = 0; i < startPadding; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day other-month';
+                const prevDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), -startPadding + i + 1);
+                day.textContent = prevDate.getDate();
+                grid.appendChild(day);
+            }
+
+            // Days of month
+            for (let i = 1; i <= lastDay.getDate(); i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day';
+                
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+                if (date.toDateString() === today.toDateString()) {
+                    day.classList.add('today');
+                }
+                if (date.toDateString() === selectedDate.toDateString()) {
+                    day.classList.add('selected');
+                }
+
+                // Check for reservations
+                const hasRes = reservations.some(r => {
+                    const rDate = new Date(r.data);
+                    return rDate.toDateString() === date.toDateString() && r.status !== 'cancelada';
+                });
+                if (hasRes) {
+                    day.classList.add('has-reservation');
+                }
+
+                day.textContent = i;
+                day.onclick = () => selectDate(date);
+                grid.appendChild(day);
+            }
+
+            // Next month padding
+            const totalCells = startPadding + lastDay.getDate();
+            const remaining = 42 - totalCells;
+            for (let i = 1; i <= remaining; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day other-month';
+                day.textContent = i;
+                grid.appendChild(day);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function selectDate(date) {
+            selectedDate = date;
+            document.getElementById('selectedDateDisplay').textContent = formatDate(date);
+            document.getElementById('reservaData').value = formatDateISO(date);
+            renderCalendar();
+            renderReservations();
+        }
+
+        function renderReservations() {
+            const list = document.getElementById('reservationsList');
+            const dayReservations = reservations.filter(r => {
+                const rDate = new Date(r.data);
+                return rDate.toDateString() === selectedDate.toDateString() && r.status !== 'cancelada';
+            });
+
+            if (dayReservations.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-check empty-icon"></i>
+                        <p>Nenhuma reserva para esta data</p>
+                    </div>
+                `;
+                updateDashboard(0, 0, 0);
+                return;
+            }
+
+            list.innerHTML = dayReservations.map(r => `
+                <div class="reservation-card" onclick="openDetailsModal(${r.id})">
+                    <div class="reservation-header">
+                        <span class="reservation-time">${r.hora}</span>
+                        <span class="reservation-status status-${r.status}">${getStatusLabel(r.status)}</span>
+                    </div>
+                    <div class="reservation-info">
+                        <div class="reservation-name">${r.nome}</div>
+                        <div class="reservation-details">
+                            <span class="reservation-detail">
+                                <i class="fas fa-user"></i>
+                                ${r.pessoas} pessoas
+                            </span>
+                            <span class="reservation-detail">
+                                <i class="fas fa-door-open"></i>
+                                Mesa ${r.mesa || '-'}
+                            </span>
+                            <a href="https://wa.me/${r.telefone}" class="reservation-detail whatsapp-link" onclick="event.stopPropagation()">
+                                <i class="fab fa-whatsapp"></i>
+                                ${r.telefone}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="reservation-actions">
+                        ${r.status === 'confirmada' ? `<button class="reservation-btn btn-chegar" onclick="event.stopPropagation(); confirmArrivalById(${r.id})">Chegada</button>` : ''}
+                        ${r.status === 'pendente' ? `<button class="reservation-btn btn-confirmar" onclick="event.stopPropagation(); confirmReservationById(${r.id})">Confirmar</button>` : ''}
+                        ${r.status !== 'cancelada' && r.status !== 'finalizada' ? `<button class="reservation-btn btn-cancelar" onclick="event.stopPropagation(); cancelReservationById(${r.id})">Cancelar</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            const confirmed = dayReservations.filter(r => r.status === 'confirmada' || r.status === 'no-local').length;
+            const capacidade = parseInt(document.getElementById('configCapacidade')?.value || 50);
+            const ocupacao = Math.round((dayReservations.reduce((acc, r) => acc + parseInt(r.pessoas), 0) / capacidade) * 100);
+            updateDashboard(dayReservations.length, confirmed, Math.min(ocupacao, 100));
+        }
+
+        function updateDashboard(total, confirmadas, ocupacao) {
+            document.getElementById('totalHoje').textContent = total;
+            document.getElementById('confirmadas').textContent = confirmadas;
+            document.getElementById('ocupacao').textContent = ocupacao + '%';
+        }
+
+        function generateTimeSlots() {
+            const container = document.getElementById('timeSlots');
+            const inicio = document.getElementById('configHoraInicio')?.value || '18:00';
+            const fim = document.getElementById('configHoraFim')?.value || '23:00';
+            
+            const [hInicio, mInicio] = inicio.split(':').map(Number);
+            const [hFim, mFim] = fim.split(':').map(Number);
+            
+            const duracao = parseInt(document.getElementById('configDuracao')?.value || 60);
+            const slots = [];
+            
+            let current = hInicio * 60 + mInicio;
+            const end = hFim * 60 + mFim;
+            
+            while (current < end) {
+                const hours = Math.floor(current / 60);
+                const minutes = current % 60;
+                slots.push(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+                current += duracao;
+            }
+
+            container.innerHTML = slots.map(slot => `
+                <div class="time-slot" data-time="${slot}" onclick="selectTimeSlot('${slot}')">${slot}</div>
+            `).join('');
+        }
+
+        function selectTimeSlot(time) {
+            document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.time-slot[data-time="${time}"]`)?.classList.add('selected');
+            selectedTimeSlot = time;
+        }
+
+        // Modal Functions
+        function openNewReservationModal() {
+            document.getElementById('reservaData').value = formatDateISO(selectedDate);
+            document.getElementById('newReservationModal').classList.add('active');
+            generateTimeSlots();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openDetailsModal(id) {
+            selectedReservation = reservations.find(r => r.id === id);
+            if (!selectedReservation) return;
+
+            document.getElementById('detailNome').textContent = selectedReservation.nome;
+            document.getElementById('detailTelefone').textContent = selectedReservation.telefone;
+            document.getElementById('detailData').textContent = formatDate(new Date(selectedReservation.data));
+            document.getElementById('detailHora').textContent = selectedReservation.hora;
+            document.getElementById('detailPessoas').textContent = selectedReservation.pessoas;
+            document.getElementById('detailMesa').textContent = selectedReservation.mesa || 'Sem atribuição';
+            document.getElementById('detailStatus').innerHTML = `<span class="reservation-status status-${selectedReservation.status}">${getStatusLabel(selectedReservation.status)}</span>`;
+            document.getElementById('detailObs').textContent = selectedReservation.observacoes || '-';
+
+            // History
+            const history = selectedReservation.historia || [];
+            document.getElementById('detailHistory').innerHTML = history.length ? history.map(h => `
+                <div class="history-item">
+                    <div class="history-icon" style="background: ${getHistoryIconBg(h.acao)}">
+                        <i class="fas ${getHistoryIcon(h.acao)}"></i>
+                    </div>
+                    <div class="history-content">
+                        <div class="history-title">${h.descricao}</div>
+                        <div class="history-time">${h.data}</div>
+                    </div>
+                </div>
+            `).join('') : '<p style="color:var(--text-muted)">Sem histórico</p>';
+
+            document.getElementById('detailsModal').classList.add('active');
+        }
+
+        function getHistoryIcon(acao) {
+            const icons = {
+                'criada': 'fa-plus',
+                'confirmada': 'fa-check',
+                'chegada': 'fa-user-check',
+                'cancelada': 'fa-times',
+                'remarcada': 'fa-calendar-alt'
+            };
+            return icons[acao] || 'fa-circle';
+        }
+
+        function getHistoryIconBg(acao) {
+            const colors = {
+                'criada': 'rgba(0,217,255,0.2)',
+                'confirmada': 'rgba(0,200,83,0.2)',
+                'chegada': 'rgba(0,217,255,0.2)',
+                'cancelada': 'rgba(255,23,68,0.2)',
+                'remarcada': 'rgba(255,179,0,0.2)'
+            };
+            return colors[acao] || 'rgba(158,158,184,0.2)';
+        }
+
+        // API Functions
+        async function loadReservations() {
+            try {
+                const response = await fetch(`/api/reservas?data=${formatDateISO(selectedDate)}`);
+                reservations = await response.json();
+            } catch (e) {
+                reservations = getDemoReservations();
+            }
+            renderReservations();
+        }
+
+        function getDemoReservations() {
+            return [
+                { id: 1, nome: 'João Silva', telefone: '55999999999', data: selectedDate.toISOString(), hora: '19:00', pessoas: 4, mesa: '3', status: 'confirmada', observacoes: 'Aniversário', historia: [{acao:'criada', descricao:'Reserva criada', data:'22/04/2026 14:30'}, {acao:'confirmada', descricao:'Reserva confirmada', data:'22/04/2026 15:00'}] },
+                { id: 2, nome: 'Maria Santos', telefone: '55888888888', data: selectedDate.toISOString(), hora: '20:00', pessoas: 2, mesa: '5', status: 'pendente', observaciones: '', historia: [{acao:'criada', descricao:'Reserva criada', data:'22/04/2026 16:00'}] },
+                { id: 3, nome: 'Pedro Costa', telefone: '55777777777', data: selectedDate.toISOString(), hora: '21:00', pessoas: 6, mesa: '1', status: 'no-local', observacoes: 'Cliente VIP', historia: [{acao:'criada', descricao:'Reserva criada', data:'21/04/2026 10:00'}, {acao:'confirmada', descricao:'Reserva confirmada', data:'21/04/2026 10:30'}, {acao:'chegada', descricao:'Cliente chegou', data:'22/04/2026 20:55'}] }
+            ];
+        }
+
+        async function saveReservation() {
+            const nome = document.getElementById('reservaNome').value;
+            const telefone = document.getElementById('reservaTelefone').value;
+            const data = document.getElementById('reservaData').value;
+            const pessoas = document.getElementById('reservaPessoas').value;
+            const mesa = document.getElementById('reservaMesa').value;
+            const obs = document.getElementById('reservaObs').value;
+
+            if (!nome || !telefone || !selectedTimeSlot) {
+                showToast('Preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+
+            const novaReserva = {
+                nome,
+                telefone,
+                data,
+                hora: selectedTimeSlot,
+                pessoas,
+                mesa,
+                observacoes: obs,
+                status: 'pendente'
+            };
+
+            try {
+                const response = await fetch('/api/reservas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novaReserva)
+                });
+                
+                if (response.ok) {
+                    showToast('Reserva criada com sucesso!', 'success');
+                    closeModal('newReservationModal');
+                    loadReservations();
+                    clearForm();
+                }
+            } catch (e) {
+                // Demo mode
+                novaReserva.id = Date.now();
+                novaReserva.historia = [{acao:'criada', descricao:'Reserva criada', data:new Date().toLocaleString('pt-BR')}];
+                reservations.push(novaReserva);
+                showToast('Reserva criada com sucesso!', 'success');
+                closeModal('newReservationModal');
+                renderReservations();
+                renderCalendar();
+                clearForm();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('reservaNome').value = '';
+            document.getElementById('reservaTelefone').value = '';
+            document.getElementById('reservaPessoas').value = '2';
+            document.getElementById('reservaMesa').value = '';
+            document.getElementById('reservaObs').value = '';
+            selectedTimeSlot = null;
+            document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
+        }
+
+        async function confirmReservationById(id) {
+            const reserva = reservations.find(r => r.id === id);
+            if (reserva) {
+                reserva.status = 'confirmada';
+                reserva.historia.push({acao:'confirmada', descricao:'Reserva confirmada', data:new Date().toLocaleString('pt-BR')});
+                showToast('Reserva confirmada!', 'success');
+                renderReservations();
+            }
+        }
+
+        async function confirmArrivalById(id) {
+            const reserva = reservations.find(r => r.id === id);
+            if (reserva) {
+                reserva.status = 'no-local';
+                reserva.historia.push({acao:'chegada', descricao:'Cliente chegou', data:new Date().toLocaleString('pt-BR')});
+                showToast('Chegada registrada!', 'success');
+                renderReservations();
+            }
+        }
+
+        async function cancelReservationById(id) {
+            const reserva = reservations.find(r => r.id === id);
+            if (reserva) {
+                reserva.status = 'cancelada';
+                reserva.historia.push({acao:'cancelada', descricao:'Reserva cancelada', data:new Date().toLocaleString('pt-BR')});
+                showToast('Reserva cancelada', 'warning');
+                renderReservations();
+                renderCalendar();
+            }
+        }
+
+        function confirmReservation() {
+            if (selectedReservation) {
+                selectedReservation.status = 'confirmada';
+                selectedReservation.historia.push({acao:'confirmada', descricao:'Reserva confirmada', data:new Date().toLocaleString('pt-BR')});
+                showToast('Reserva confirmada!', 'success');
+                closeModal('detailsModal');
+                renderReservations();
+            }
+        }
+
+        function confirmArrival() {
+            if (selectedReservation) {
+                selectedReservation.status = 'no-local';
+                selectedReservation.historia.push({acao:'chegada', descricao:'Cliente chegou', data:new Date().toLocaleString('pt-BR')});
+                showToast('Chegada registrada!', 'success');
+                closeModal('detailsModal');
+                renderReservations();
+            }
+        }
+
+        function cancelReservation() {
+            if (selectedReservation) {
+                selectedReservation.status = 'cancelada';
+                selectedReservation.historia.push({acao:'cancelada', descricao:'Reserva cancelada', data:new Date().toLocaleString('pt-BR')});
+                showToast('Reserva cancelada', 'warning');
+                closeModal('detailsModal');
+                renderReservations();
+                renderCalendar();
+            }
+        }
+
+        // Settings
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+        }
+
+        function saveSettings() {
+            localStorage.setItem('barflow_reservas_config', JSON.stringify({
+                horaInicio: document.getElementById('configHoraInicio').value,
+                horaFim: document.getElementById('configHoraFim').value,
+                duracao: document.getElementById('configDuracao').value,
+                capacidade: document.getElementById('configCapacidade').value,
+                mensagem: document.getElementById('configMensagem').value
+            }));
+            showToast('Configurações salvas!', 'success');
+            generateTimeSlots();
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('barflow_reservas_config');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('configHoraInicio').value = config.horaInicio;
+                document.getElementById('configHoraFim').value = config.horaFim;
+                document.getElementById('configDuracao').value = config.duracao;
+                document.getElementById('configCapacidade').value = config.capacidade;
+                document.getElementById('configMensagem').value = config.mensagem;
+            }
+        }
+
+        // Utils
+        function formatDate(date) {
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function formatDateISO(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pendente': 'Pendente',
+                'confirmada': 'Confirmada',
+                'no-local': 'No Local',
+                'finalizada': 'Finalizada',
+                'cancelada': 'Cancelada'
+            };
+            return labels[status] || status;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    <!-- Footer -->
+    <div style="position:fixed;bottom:0;left:0;right:0;background:var(--surface);padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border);z-index:100;">
+        <span style="font-size:12px;color:var(--text-muted);">Desenvolvido por <strong style="color:var(--primary);">4dotcom</strong></span>
+        <span style="opacity:0.6">v1.0.0</span>
+    </div>
+    <button onclick="location.href='menu.html'" style="position:fixed;top:15px;left:15px;background:var(--primary);color:white;width:44px;height:44px;border-radius:12px;border:none;font-size:20px;cursor:pointer;z-index:200;">🏠</button>
+</body>
+</html>

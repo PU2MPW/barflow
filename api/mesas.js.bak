@@ -1,0 +1,59 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const mesas = getCollection('mesas');
+        
+        if (method === 'GET') {
+            const { status } = query;
+            let resultados = [...mesas];
+            
+            if (status) resultados = resultados.filter(m => m.status === status);
+            resultados.sort((a, b) => (a.numero || 0) - (b.numero || 0));
+            return res.json(resultados);
+        }
+        
+        if (method === 'POST') {
+            const { numero, capacidade } = body;
+            if (!numero) return res.status(400).json({ error: 'numero obrigatorio' });
+            
+            const newId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
+            const newMesa = { id: newId, numero, capacidade: capacidade || 4, status: 'disponivel' };
+            mesas.push(newMesa);
+            
+            return res.status(201).json({ id: newId, message: 'Mesa criada' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = mesas.findIndex(m => m.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Mesa nao encontrada' });
+            
+            if (body.numero !== undefined) mesas[index].numero = body.numero;
+            if (body.capacidade !== undefined) mesas[index].capacidade = body.capacidade;
+            if (body.status !== undefined) mesas[index].status = body.status;
+            
+            return res.json({ message: 'Mesa atualizada' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = mesas.findIndex(m => m.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Mesa nao encontrada' });
+            
+            mesas.splice(index, 1);
+            return res.json({ message: 'Mesa deletada' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

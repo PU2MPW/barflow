@@ -1,0 +1,92 @@
+import { getDb, getCollection, setData } from './_db.js';
+import { createHash } from 'crypto';
+import { randomUUID } from 'crypto';
+
+function hashSenha(senha) {
+    return createHash('sha256').update(senha).digest('hex');
+}
+
+function gerarToken() {
+    return randomUUID();
+}
+
+export default async function handler(req, res) {
+    const db = getDb();
+    const url = req.url || '';
+    const usuarios = getCollection('usuarios');
+    const tokens = getCollection('tokens');
+
+    if (url === '/api/auth/login' && req.method === 'POST') {
+        const { email, senha } = req.body || {};
+        
+        if (!email || !senha) {
+            return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
+        }
+
+        const usuario = usuarios.find(u => u.email === email && u.ativo === 1);
+        
+        if (!usuario) {
+            return res.status(401).json({ erro: 'Credenciais inválidas' });
+        }
+
+        const senhaHash = hashSenha(senha);
+        
+        if (usuario.senha !== senhaHash) {
+            return res.status(401).json({ erro: 'Credenciais inválidas' });
+        }
+
+        const token = gerarToken();
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        const newId = tokens.length > 0 ? Math.max(...tokens.map(t => t.id)) + 1 : 1;
+        tokens.push({ id: newId, token, usuario_id: usuario.id, expires_at: expiresAt });
+
+        return res.status(200).json({
+            token,
+            usuario: {
+                id: usuario.id,
+                nome: usuario.nome,
+                email: usuario.email,
+                tipo: usuario.tipo
+            }
+        });
+    }
+
+    if (url === '/api/auth/logout' && req.method === 'POST') {
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.replace('Bearer ', '');
+
+        if (token) {
+            const idx = tokens.findIndex(t => t.token === token);
+            if (idx !== -1) tokens.splice(idx, 1);
+        }
+
+        return res.status(200).json({ mensagem: 'Logout realizado' });
+    }
+
+    if (url === '/api/auth/me' && req.method === 'GET') {
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({ erro: 'Token não fornecido' });
+        }
+
+        const now = new Date().toISOString();
+        const tokenData = tokens.find(t => t.token === token && t.expires_at && t.expires_at > now);
+
+        if (!tokenData) {
+            return res.status(401).json({ erro: 'Token inválido ou expirado' });
+        }
+
+        const usuario = usuarios.find(u => u.id === tokenData.usuario_id && u.ativo === 1);
+
+        if (!usuario) {
+            return res.status(401).json({ erro: 'Usuário não encontrado' });
+        }
+
+        return res.status(200).json(usuario);
+    }
+
+    return res.status(404).json({ erro: 'Endpoint não encontrado' });
+}

@@ -1,0 +1,70 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const reservas = getCollection('reservas');
+        
+        if (method === 'GET') {
+            const { data, status } = query;
+            let resultados = [...reservas];
+            
+            if (data) resultados = resultados.filter(r => r.data === data);
+            if (status) resultados = resultados.filter(r => r.status === status);
+            
+            resultados.sort((a, b) => {
+                const dateCompare = (a.data || '').localeCompare(b.data || '');
+                if (dateCompare !== 0) return dateCompare;
+                return (a.hora || '').localeCompare(b.hora || '');
+            });
+            return res.json(resultados);
+        }
+        
+        if (method === 'POST') {
+            const { nome, telefone, data, hora, pessoas } = body;
+            if (!nome || !telefone || !data || !hora || !pessoas) {
+                return res.status(400).json({ error: 'nome, telefone, data, hora e pessoas obrigatorios' });
+            }
+            
+            const newId = reservas.length > 0 ? Math.max(...reservas.map(r => r.id)) + 1 : 1;
+            const newReserva = { id: newId, nome, telefone, data, hora, pessoas, status: 'pendente', created_at: new Date().toISOString() };
+            reservas.push(newReserva);
+            
+            return res.status(201).json({ id: newId, message: 'Reserva criada' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = reservas.findIndex(r => r.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Reserva nao encontrada' });
+            
+            if (body.nome !== undefined) reservas[index].nome = body.nome;
+            if (body.telefone !== undefined) reservas[index].telefone = body.telefone;
+            if (body.data !== undefined) reservas[index].data = body.data;
+            if (body.hora !== undefined) reservas[index].hora = body.hora;
+            if (body.pessoas !== undefined) reservas[index].pessoas = body.pessoas;
+            if (body.status !== undefined) reservas[index].status = body.status;
+            
+            return res.json({ message: 'Reserva atualizada' });
+        }
+        
+        if (method === 'DELETE') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = reservas.findIndex(r => r.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Reserva nao encontrada' });
+            
+            reservas.splice(index, 1);
+            return res.json({ message: 'Reserva deletada' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

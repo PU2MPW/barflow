@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarFlow - Login Caixa</title>
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --primary-dark: #e55a2b;
+            --success: #00c853;
+            --warning: #ff9100;
+            --danger: #ff1744;
+            --surface: #fff;
+            --background: #f5f5f5;
+            --text: #333;
+            --text-muted: #666;
+            --border: #ddd;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text);
+        }
+        .logo-sub {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 15px;
+            background: var(--surface);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .operators-list {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .operators-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+        .operator-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--background);
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .operator-btn:hover { background: var(--border); }
+        .operator-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .operator-info { flex: 1; text-align: left; }
+        .operator-name { font-weight: 600; }
+        .operator-role { font-size: 12px; color: var(--text-muted); }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            color: #e65100;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <div class="logo-icon">B</div>
+            <div class="logo-text">BarFlow</div>
+            <div class="logo-sub">Abertura de Caixa</div>
+        </div>
+        
+        <div id="caixa-fechado" class="alert alert-warning">
+            ⚠️ Caixa está fechado. Abra um caixa para operar.
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Operador</label>
+            <select class="form-input" id="operador">
+                <option value="">Selecione...</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Senha</label>
+            <input type="password" class="form-input" id="senha" placeholder="••••••">
+        </div>
+        
+        <button class="btn-primary" onclick="abrirCaixa()">🔓 Abrir Caixa</button>
+        
+        <div class="operators-list">
+            <div class="operators-title">Selecione operador rápido:</div>
+            <div id="operators"></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <span>Desenvolvido por</span> <strong style="color: var(--primary);">4dotcom</strong>
+    </div>
+
+    <script>
+        // Operadores padrão
+        const operadores = [
+            { id: 1, nome: 'Admin', senha: '1234', role: 'Gerente' },
+            { id: 2, nome: 'Caixa 1', senha: '1111', role: 'Operador' },
+            { id: 3, nome: 'Caixa 2', senha: '2222', role: 'Operador' },
+            { id: 4, nome: 'Garçom', senha: '3333', role: 'Operador' }
+        ];
+        
+        let caixaAberto = JSON.parse(localStorage.getItem('caixaAberto')) || null;
+        
+        // Verificar se caixa já está aberto
+        if (caixaAberto) {
+            const diff = Date.now() - new Date(caixaAberto.abertura).getTime();
+            const horas = diff / (1000 * 60 * 60);
+            
+            if (horas < 24) {
+                // caixa aberto recente - redirecionar
+                window.location.href = 'pdv.html';
+            }
+        }
+        
+        // Popular select
+        const select = document.getElementById('operador');
+        operadores.forEach(op => {
+            select.innerHTML += `<option value="${op.id}">${op.nome} (${op.role})</option>`;
+        });
+        
+        // Popular botões rápidos
+        const opsDiv = document.getElementById('operators');
+        opsDiv.innerHTML = operadores.map(op => `
+            <button class="operator-btn" onclick="selecionarOperador(${op.id})">
+                <div class="operator-avatar">${op.nome[0]}</div>
+                <div class="operator-info">
+                    <div class="operator-name">${op.nome}</div>
+                    <div class="operator-role">${op.role}</div>
+                </div>
+            </button>
+        `).join('');
+        
+        function selecionarOperador(id) {
+            const op = operadores.find(o => o.id === id);
+            if (op) {
+                document.getElementById('operador').value = op.id;
+                document.getElementById('senha').focus();
+            }
+        }
+        
+        function abrirCaixa() {
+            const operadorId = document.getElementById('operador').value;
+            const senha = document.getElementById('senha').value;
+            
+            if (!operadorId || !senha) {
+                alert('Selecione operador e digite a senha!');
+                return;
+            }
+            
+            const operador = operadores.find(o => o.id === parseInt(operadorId));
+            if (!operador || operador.senha !== senha) {
+                alert('Operador ou senha incorretos!');
+                return;
+            }
+            
+            const valorInicial = parseFloat(prompt('Valor inicial do caixa:') || '0');
+            
+            const caixa = {
+                id: 'CX' + Date.now(),
+                operador: operador.nome,
+                operadorId: operador.id,
+                abertura: new Date().toISOString(),
+                valorInicial: valorInicial,
+                vendas: [],
+                suprimentos: [],
+                sangrias: [],
+                status: 'aberto'
+            };
+            
+            localStorage.setItem('caixaAberto', JSON.stringify(caixa));
+            
+            alert('✅ Caixa aberto!\n\nOperador: ' + operador.nome + '\nValor: R$ ' + valorInicial.toFixed(2));
+            
+            window.location.href = 'pdv.html';
+        }
+    </script>
+</body>
+</html>

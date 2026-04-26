@@ -1,0 +1,245 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+function gerarChaveNFe() {
+    const uf = '35';
+    const aamm = new Date().toISOString().slice(2, 6);
+    const cnpj = '12345678000199';
+    const modelo = '65';
+    const serie = String(Math.floor(Math.random() * 999)).padStart(3, '0');
+    const numero = String(Math.floor(Math.random() * 999999)).padStart(9, '0');
+    const tpEmi = '1';
+    const cnpjFormatado = cnpj;
+    const random = String(Math.floor(Math.random() * 99999999)).padStart(8, '0');
+    
+    const chaveBase = uf + aamm + cnpjFormatado + modelo + serie + numero + tpEmi + random;
+    let modulo = 0;
+    for (let i = 0; i < chaveBase.length; i++) {
+        modulo = (modulo * 10 + parseInt(chaveBase[i])) % 11;
+    }
+    const dv = 11 - modulo;
+    return chaveBase + (dv === 10 ? 0 : dv);
+}
+
+function gerarXMLDanfe(dados) {
+    const { chave, numero, serie, emissor, destinatario, produtos, totais, pagadoras, infAdic } = dados;
+    const data = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>`;
+    xml += `<NFe xmlns="http://www.portalfiscal.inf.br/nfe">`;
+    xml += `<infNFe versao="4.00" Id="NFe${chave}">`;
+    xml += `<ide><cUF>35</cUF><cNF>${numero.slice(-8)}</cNF><natOp>VENDA</natOp>`;
+    xml += `<serie>${serie}</serie><nNF>${numero}</nNF><dhEmi>${new Date().toISOString()}</dhEmi>`;
+    xml += `<tpNF>1</tpNF><dest><dest></dest></ide>`;
+    xml += `<emit><CNPJ>${emissor.cnpj}</CNPJ><xNome>${emissor.nome}</xNome>`;
+    xml += `<enderEmit><xLgr>${emissor.endereco}</xLgr></enderEmit></emit>`;
+    
+    if (destinatario) {
+        xml += `<dest><CPF>${destinatario.cpf}</CPF><xNome>${destinatario.nome}</xNome></dest>`;
+    }
+    
+    xml += `<det>`;
+    produtos.forEach((p, i) => {
+        xml += `<prod><cProd>${p.codigo}</cProd><xProd>${p.descricao}</xProd>`;
+        xml += `<NCM>${p.ncm}</NCM><CFOP>${p.cfop}</CFOP><qCom>${p.qtd}</qCom>`;
+        xml += `<uCom>${p.un}</uCom><vUnCom>${p.vlr.toFixed(2)}</vUnCom>`;
+        xml += `<vProd>${p.vlrTotal.toFixed(2)}</vProd></prod>`;
+        xml += `<imposto><ICMS><ICMS00><vBC>${p.vlrTotal.toFixed(2)}</vBC><vICMS>${(p.vlrTotal * 0.12).toFixed(2)}</vICMS></ICMS00></ICMS></imposto>`;
+    });
+    xml += `</det>`;
+    
+    xml += `<total><ICMSTot><vBC>${totais.baseICMS.toFixed(2)}</vBC><vICMS>${totais.valorICMS.toFixed(2)}</vICMS><vNF>${totais.vlrTotal.toFixed(2)}</vNF></ICMSTot></total>`;
+    
+    xml += `<pag>`;
+    pagadoras.forEach(p => {
+        xml += `<detPag><tPag>${p.forma}</tPag><vPag>${p.vlr.toFixed(2)}</vPag></detPag>`;
+    });
+    xml += `</pag>`;
+    
+    if (infAdic) {
+        xml += `<infAdic><infCpl>${infAdic}</infCpl></infAdic>`;
+    }
+    
+    xml += `</infNFe></NFe>`;
+    return xml;
+}
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    const db = getDb();
+    const nfce_logs = getCollection('nfce_logs');
+    const pedidos = getCollection('pedidos');
+    const pedido_itens = getCollection('pedido_itens');
+    const produtos = getCollection('produtos');
+    
+    try {
+        if (method === 'GET' && req.url === '/status') {
+            const Emitida = nfce_logs.filter(n => n.status === 'emitida').length;
+            const ultima = nfce_logs.filter(n => n.status === 'emitida').sort((a, b) => b.id - a.id)[0];
+            const agora = new Date();
+            const h24 = new Date(agora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+            const contingencia = nfce_logs.filter(n => n.chave && n.chave.startsWith('NFe35') && n.created_at && n.created_at >= h24);
+            
+            return res.json({
+                emitida: Emitida > 0,
+                ultimachave: ultima?.chave || null,
+                ultimacontingencia: contingencia.length > 0,
+                total_emitidas_24h: Emitida
+            });
+        }
+        
+        if (method === 'POST' && req.url === '/emitir') {
+            const { pedido_id } = body;
+            
+            if (!pedido_id) {
+                return res.status(400).json({ sucesso: false, erro: 'pedido_id obrigatorio' });
+            }
+            
+            const pedido = pedidos.find(p => p.id === pedido_id);
+            if (!pedido) {
+                return res.status(404).json({ sucesso: false, erro: 'Pedido nao encontrado' });
+            }
+            
+            const itens = pedido_itens.filter(i => i.pedido_id === pedido_id).map(item => {
+                const prod = produtos.find(p => p.id === item.produto_id);
+                return { ...item, nome: prod?.nome || '', codigo: prod?.codigo || '', ncm: prod?.ncm || '' };
+            });
+            
+            const serie = '001';
+            const numero = String(Math.floor(Math.random() * 999999)).padStart(6, '0');
+            const chave = gerarChaveNFe();
+            
+            const produtosNfe = itens.map(item => ({
+                codigo: item.codigo || String(item.produto_id),
+                descricao: item.nome,
+                ncm: item.ncm || '21010000',
+                cfop: '5102',
+                qtd: item.quantidade,
+                un: 'UN',
+                vlr: item.preco_unitario,
+                vlrTotal: item.preco_unitario * item.quantidade
+            }));
+            
+            const totais = produtosNfe.reduce((acc, p) => ({
+                baseICMS: acc.baseICMS + p.vlrTotal,
+                valorICMS: acc.valorICMS + (p.vlrTotal * 0.12),
+                vlrTotal: acc.vlrTotal + p.vlrTotal
+            }), { baseICMS: 0, valorICMS: 0, vlrTotal: 0 });
+            
+            const dadosDanfe = {
+                versao: '4.00',
+                numero,
+                serie,
+                chave,
+                data: new Date().toISOString(),
+                emissor: { nome: 'Bar Restaurante', CNPJ: '12345678000199', IE: '123456789', endereco: 'Rua Principal, 100' },
+                destinatario: null,
+                produtos: produtosNfe,
+                totais,
+                pagadoras: [{ forma: '01', vlr: totais.vlrTotal }],
+                infAdic: `Pedido #${pedido_id}`
+            };
+            
+            const xml = gerarXMLDanfe(dadosDanfe);
+            
+            const newId = nfce_logs.length > 0 ? Math.max(...nfce_logs.map(n => n.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            nfce_logs.push({ id: newId, pedido_id, chave, status: 'emitida', xml, motivo: null, created_at: now });
+            
+            return res.status(201).json({
+                sucesso: true,
+                chave,
+                numero,
+                serie,
+                xml,
+                danfe: dadosDanfe
+            });
+        }
+        
+        if (method === 'GET' && req.url.startsWith('/consultar/')) {
+            const chave = req.url.split('/consultar/')[1];
+            
+            if (!chave) {
+                return res.status(400).json({ sucesso: false, erro: 'chave obrigatoria' });
+            }
+            
+            const nfce = nfce_logs.find(n => n.chave === chave);
+            
+            if (!nfce) {
+                return res.json({
+                    sucesso: true,
+                    status: 'nao_encontrada',
+                    chave,
+                    situacao: 'NFC-e nao Localizada'
+                });
+            }
+            
+            return res.json({
+                sucesso: true,
+                status: nfce.status,
+                chave: nfce.chave,
+                pedido_id: nfce.pedido_id,
+                xml: nfce.xml,
+                created_at: nfce.created_at
+            });
+        }
+        
+        if (method === 'POST' && req.url === '/cancelar') {
+            const { chave, motivo } = body;
+            
+            if (!chave) {
+                return res.status(400).json({ sucesso: false, erro: 'chave obrigatoria' });
+            }
+            
+            if (!motivo) {
+                return res.status(400).json({ sucesso: false, erro: 'motivo obrigatorio' });
+            }
+            
+            const index = nfce_logs.findIndex(n => n.chave === chave);
+            if (index === -1) {
+                return res.status(404).json({ sucesso: false, erro: 'NFC-e nao encontrada' });
+            }
+            
+            if (nfce_logs[index].status === 'cancelada') {
+                return res.status(400).json({ sucesso: false, erro: 'NFC-e ja cancelada' });
+            }
+            
+            nfce_logs[index].status = 'cancelada';
+            nfce_logs[index].motivo = motivo;
+            
+            return res.json({
+                sucesso: true,
+                chave,
+                status: 'cancelada',
+                motivo
+            });
+        }
+        
+        if (method === 'POST' && req.url === '/inutilizar') {
+            const { serie, numerofinal, motivo } = body;
+            
+            if (!serie || !numerofinal || !motivo) {
+                return res.status(400).json({ sucesso: false, erro: 'serie, numerofinal e motivo obrigatorios' });
+            }
+            
+            const chaveInutil = `NFe35${new Date().toISOString().slice(2, 6)}1234567800019965${serie.padStart(3, '0')}${numerofinal.padStart(6, '0')}1`;
+            
+            const newId = nfce_logs.length > 0 ? Math.max(...nfce_logs.map(n => n.id)) + 1 : 1;
+            const now = new Date().toISOString();
+            nfce_logs.push({ id: newId, pedido_id: null, chave: chaveInutil, status: 'inutilizada', xml: null, motivo: `Inutilização: ${motivo}`, created_at: now });
+            
+            return res.json({
+                sucesso: true,
+                serie,
+                numerofinal,
+                mensagem: `Numeracao ${serie}-${numerofinal} inutilizada`,
+                motivo
+            });
+        }
+        
+        res.status(404).json({ sucesso: false, erro: 'Endpoint nao encontrado' });
+    } catch (error) {
+        console.error('NFC-e Error:', error);
+        res.status(500).json({ sucesso: false, erro: error.message });
+    }
+}

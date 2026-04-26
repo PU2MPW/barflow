@@ -1,0 +1,116 @@
+import { getDb, getCollection, setData } from './_db.js';
+import { createHash } from 'crypto';
+
+function hashSenha(senha) {
+    return createHash('sha256').update(senha).digest('hex');
+}
+
+async function getJson(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                resolve(body ? JSON.parse(body) : {});
+            } catch (e) {
+                resolve({});
+            }
+        });
+        req.on('error', reject);
+    });
+}
+
+export default async function handler(req, res) {
+    const db = getDb();
+    const url = req.url || '';
+    const basePath = '/api/usuarios';
+    const usuarios = getCollection('usuarios');
+
+    if (url === basePath && req.method === 'GET') {
+        const resultados = usuarios.map(u => ({
+            id: u.id,
+            nome: u.nome,
+            email: u.email,
+            tipo: u.tipo,
+            ativo: u.ativo,
+            created_at: u.created_at
+        }));
+        return res.status(200).json(resultados);
+    }
+
+    if (url === basePath && req.method === 'POST') {
+        const data = await getJson(req);
+        const { nome, email, senha, tipo } = data;
+
+        if (!nome || !email || !senha) {
+            return res.status(400).json({ erro: 'Nome, email e senha são obrigatórios' });
+        }
+
+        const existente = usuarios.find(u => u.email === email);
+        if (existente) {
+            return res.status(400).json({ erro: 'Email já cadastrado' });
+        }
+
+        const senhaHash = hashSenha(senha);
+        const tipoUsuario = tipo || 'garcom';
+        
+        const newId = usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
+        const now = new Date().toISOString();
+        usuarios.push({ id: newId, nome, email, senha: senhaHash, tipo: tipoUsuario, ativo: 1, created_at: now });
+
+        return res.status(201).json({ id: newId, nome, email, tipo: tipoUsuario });
+    }
+
+    const editMatch = url.match(/^\/api\/usuarios\/(\d+)$/);
+    if (editMatch) {
+        const id = parseInt(editMatch[1]);
+
+        if (req.method === 'GET') {
+            const usuario = usuarios.find(u => u.id === id);
+            if (!usuario) {
+                return res.status(404).json({ erro: 'Usuário não encontrado' });
+            }
+            return res.status(200).json({
+                id: usuario.id,
+                nome: usuario.nome,
+                email: usuario.email,
+                tipo: usuario.tipo,
+                ativo: usuario.ativo,
+                created_at: usuario.created_at
+            });
+        }
+
+        if (req.method === 'PUT') {
+            const data = await getJson(req);
+            const { nome, email, senha, tipo, ativo } = data;
+
+            const index = usuarios.findIndex(u => u.id === id);
+            if (index === -1) {
+                return res.status(404).json({ erro: 'Usuário não encontrado' });
+            }
+
+            if (senha) {
+                usuarios[index].senha = hashSenha(senha);
+            }
+
+            if (nome) usuarios[index].nome = nome;
+            if (email) usuarios[index].email = email;
+            if (tipo) usuarios[index].tipo = tipo;
+            if (ativo !== undefined) usuarios[index].ativo = ativo;
+
+            return res.status(200).json({ id, mensagem: 'Usuário atualizado' });
+        }
+
+        if (req.method === 'DELETE') {
+            const index = usuarios.findIndex(u => u.id === id);
+            if (index === -1) {
+                return res.status(404).json({ erro: 'Usuário não encontrado' });
+            }
+
+            usuarios[index].ativo = 0;
+            return res.status(200).json({ id, mensagem: 'Usuário desativado' });
+        }
+    }
+
+    return res.status(404).json({ erro: 'Endpoint não encontrado' });
+}

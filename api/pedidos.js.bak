@@ -1,0 +1,85 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const pedidos = getCollection('pedidos');
+        const pedido_itens = getCollection('pedido_itens');
+        const mesas = getCollection('mesas');
+        
+        if (method === 'GET') {
+            const { mesa, status, tipo, data_inicio, data_fim } = query;
+            let resultados = [...pedidos];
+            
+            if (mesa) resultados = resultados.filter(p => p.mesa_id == mesa);
+            if (status) resultados = resultados.filter(p => p.status === status);
+            if (tipo) resultados = resultados.filter(p => p.tipo === tipo);
+            if (data_inicio) resultados = resultados.filter(p => p.created_at >= data_inicio);
+            if (data_fim) resultados = resultados.filter(p => p.created_at <= data_fim);
+            
+            resultados.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const resultadosComMesa = resultados.map(pedido => {
+                const mesa = mesas.find(m => m.id === pedido.mesa_id);
+                const itens = pedido_itens.filter(i => i.pedido_id === pedido.id).map(item => {
+                    const produtos = getCollection('produtos');
+                    const prod = produtos.find(p => p.id === item.produto_id);
+                    return { ...item, produto_nome: prod?.nome || null };
+                });
+                return { ...pedido, mesa_numero: mesa?.numero || null, itens };
+            });
+            
+            return res.json(resultadosComMesa);
+        }
+        
+        if (method === 'POST') {
+            const { mesa_id, tipo, itens } = body;
+            if (!itens || !Array.isArray(itens) || itens.length === 0) {
+                return res.status(400).json({ error: 'itens obrigatorios' });
+            }
+            
+            const total = itens.reduce((sum, item) => sum + (item.preco_unitario * item.quantidade), 0);
+            const newId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) + 1 : 1;
+            const newPedido = { id: newId, mesa_id: mesa_id || null, tipo: tipo || 'local', total, status: 'aberto', created_at: new Date().toISOString() };
+            pedidos.push(newPedido);
+            
+            for (const item of itens) {
+                const itemId = pedido_itens.length > 0 ? Math.max(...pedido_itens.map(i => i.id)) + 1 : 1;
+                pedido_itens.push({ id: itemId, pedido_id: newId, produto_id: item.produto_id, quantidade: item.quantidade, preco_unitario: item.preco_unitario });
+            }
+            
+            if (mesa_id) {
+                const mesaIdx = mesas.findIndex(m => m.id === mesa_id);
+                if (mesaIdx !== -1) mesas[mesaIdx].status = 'ocupada';
+            }
+            
+            return res.status(201).json({ id: newId, total, message: 'Pedido criado' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = pedidos.findIndex(p => p.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Pedido nao encontrado' });
+            
+            if (body.status !== undefined) {
+                pedidos[index].status = body.status;
+                
+                if (body.status === 'finalizado' && pedidos[index].mesa_id) {
+                    const mesaIdx = mesas.findIndex(m => m.id === pedidos[index].mesa_id);
+                    if (mesaIdx !== -1) mesas[mesaIdx].status = 'disponivel';
+                }
+            }
+            if (body.total !== undefined) pedidos[index].total = body.total;
+            
+            return res.json({ message: 'Pedido atualizado' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}

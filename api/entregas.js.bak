@@ -1,0 +1,66 @@
+import { getDb, getCollection, setData } from './_db.js';
+
+export default function handler(req, res) {
+    const { method, query, body } = req;
+    
+    try {
+        const db = getDb();
+        const entregas = getCollection('entregas');
+        const pedidos = getCollection('pedidos');
+        const entregadores = getCollection('entregadores');
+        
+        if (method === 'GET') {
+            const { status, entregador } = query;
+            let resultados = [...entregas];
+            
+            if (status) resultados = resultados.filter(e => e.status === status);
+            if (entregador) resultados = resultados.filter(e => e.entregador_id == entregador);
+            
+            resultados.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const resultadosComDetalhes = resultados.map(entrega => {
+                const pedido = pedidos.find(p => p.id === entrega.pedido_id);
+                const entregador = entregadores.find(e => e.id === entrega.entregador_id);
+                return {
+                    ...entrega,
+                    pedido_id: entrega.pedido_id,
+                    valor: pedido?.total || 0,
+                    entregador_nome: entregador?.nome || null
+                };
+            });
+            
+            return res.json(resultadosComDetalhes);
+        }
+        
+        if (method === 'POST') {
+            const { pedido_id, entregador_id, taxa_entrega } = body;
+            if (!pedido_id || !entregador_id) {
+                return res.status(400).json({ error: 'pedido_id e entregador_id obrigatorios' });
+            }
+            
+            const newId = entregas.length > 0 ? Math.max(...entregas.map(e => e.id)) + 1 : 1;
+            const newEntrega = { id: newId, pedido_id, entregador_id, taxa_entrega: taxa_entrega || 0, status: 'pendente', created_at: new Date().toISOString() };
+            entregas.push(newEntrega);
+            
+            return res.status(201).json({ id: newId, message: 'Entrega criada' });
+        }
+        
+        if (method === 'PUT') {
+            const id = parseInt(query.id);
+            if (!id) return res.status(400).json({ error: 'id obrigatorio' });
+            
+            const index = entregas.findIndex(e => e.id === id);
+            if (index === -1) return res.status(404).json({ error: 'Entrega nao encontrada' });
+            
+            if (body.entregador_id !== undefined) entregas[index].entregador_id = body.entregador_id;
+            if (body.status !== undefined) entregas[index].status = body.status;
+            if (body.taxa_entrega !== undefined) entregas[index].taxa_entrega = body.taxa_entrega;
+            
+            return res.json({ message: 'Entrega atualizada' });
+        }
+        
+        res.status(405).json({ error: 'Metodo nao permitido' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
