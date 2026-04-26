@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FF6B35">
+    <title>Setup BarFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --danger: #FF1744;
+            --background: #1a1a2e;
+            --surface: #252542;
+            --surface-light: #303050;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #3D3D5C;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--background); color: var(--text); min-height: 100vh; overflow-y: auto; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 30px 20px; }
+        
+        .logo { text-align: center; margin-bottom: 40px; }
+        .logo-icon {
+            width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 20px; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 40px; font-weight: 800; color: white; margin-bottom: 15px;
+        }
+        .logo h1 { font-size: 32px; font-weight: 800; }
+        .logo p { color: var(--text-muted); margin-top: 5px; }
+        
+        .step { display: none; }
+        .step.active { display: block; }
+        
+        .step-header { margin-bottom: 25px; }
+        .step-number {
+            background: var(--primary); color: white; width: 30px; height: 30px;
+            border-radius: 50%; display: inline-flex; align-items: center;
+            justify-content: center; font-weight: 700; margin-right: 10px;
+        }
+        .step-title { font-size: 20px; font-weight: 700; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);
+        }
+        .form-input {
+            width: 100%; padding: 14px 16px; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+            font-size: 16px; outline: none; transition: border-color 0.2s;
+        }
+        .form-input:focus { border-color: var(--primary); }
+        
+        .checkbox-group {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+        }
+        .checkbox-item {
+            background: var(--surface); border: 2px solid var(--border);
+            border-radius: 12px; padding: 15px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; transition: all 0.2s;
+        }
+        .checkbox-item:hover { border-color: var(--primary); }
+        .checkbox-item.selected { border-color: var(--primary); background: rgba(255,107,53,0.1); }
+        .checkbox-item input { display: none; }
+        .checkbox-icon { font-size: 24px; }
+        .checkbox-label { font-size: 14px; font-weight: 600; }
+        .checkbox-check {
+            width: 20px; height: 20px; border: 2px solid var(--border);
+            border-radius: 5px; margin-left: auto; display: flex; align-items: center; justify-content: center;
+        }
+        .checkbox-item.selected .checkbox-check {
+            background: var(--primary); border-color: var(--primary);
+        }
+        .checkbox-item.selected .checkbox-check::after {
+            content: '✓'; color: white; font-size: 12px;
+        }
+        
+        .btn {
+            width: 100%; padding: 16px; background: var(--primary);
+            border: none; border-radius: 12px; color: white;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-secondary { background: var(--surface); }
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        .btn-group .btn { flex: 1; }
+        
+        .progress-bar {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;
+        }
+        .progress-step {
+            width: 12px; height: 12px; border-radius: 50%; background: var(--border);
+        }
+        .progress-step.active { background: var(--primary); }
+        
+        .alert {
+            padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 14px;
+        }
+        .alert-success { background: rgba(0,200,83,0.1); border: 1px solid var(--success); color: var(--success); }
+        .alert-error { background: rgba(255,23,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
+        
+        .final-screen { text-align: center; padding: 40px 20px; }
+        .final-icon { font-size: 80px; margin-bottom: 20px; }
+        .final-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+        .final-subtitle { color: var(--text-muted); font-size: 16px; }
+        
+        .features-list {
+            text-align: left; background: var(--surface); border-radius: 12px; padding: 20px; margin: 20px 0;
+        }
+        .features-list h3 { font-size: 16px; margin-bottom: 15px; }
+        .features-list ul { list-style: none; }
+        .features-list li {
+            padding: 10px 0; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .features-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">⚙️</div>
+            <h1>BarFlow</h1>
+            <p>Configuração Inicial</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-step active"></div>
+            <div class="progress-step"></div>
+            <div class="progress-step"></div>
+            <div class="progress-step"></div>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <!-- STEP 1: Dados da Empresa -->
+        <div class="step active" data-step="1">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <span class="step-title">Dados do Estabelecimento</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Nome do Estabelecimento *</label>
+                <input type="text" class="form-input" id="empresa-nome" placeholder="Bar Flow" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">CNPJ (opcional)</label>
+                <input type="text" class="form-input" id="empresa-cnpj" placeholder="__.___/____-__">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Telefone</label>
+                <input type="text" class="form-input" id="empresa-telefone" placeholder="(11) 99999-9999">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Endereço</label>
+                <input type="text" class="form-input" id="empresa-endereco" placeholder="Rua, número, bairro">
+            </div>
+            
+            <button class="btn" onclick="nextStep()">Próximo →</button>
+        </div>
+        
+        <!-- STEP 2: Módulos -->
+        <div class="step" data-step="2">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <span class="step-title">Módulos do Sistema</span>
+            </div>
+            
+            <div class="checkbox-group">
+                <label class="checkbox-item selected" onclick="toggleCheck(this)">
+                    <input type="checkbox" checked data-module="pdv">
+                    <span class="checkbox-icon">🛒</span>
+                    <span class="checkbox-label">PDV</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item selected" onclick="toggleCheck(this)">
+                    <input type="checkbox" checked data-module="mesas">
+                    <span class="checkbox-icon">🪑</span>
+                    <span class="checkbox-label">Mesas</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item selected" onclick="toggleCheck(this)">
+                    <input type="checkbox" checked data-module="kds">
+                    <span class="checkbox-icon">👨‍🍳</span>
+                    <span class="checkbox-label">Cozinha (KDS)</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="garcom">
+                    <span class="checkbox-icon">🍽️</span>
+                    <span class="checkbox-label">App Garçom</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="cardapio">
+                    <span class="checkbox-icon">📱</span>
+                    <span class="checkbox-label">Cardápio Digital</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="delivery">
+                    <span class="checkbox-icon">🛵</span>
+                    <span class="checkbox-label">Delivery</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="ifood">
+                    <span class="checkbox-icon">🍔</span>
+                    <span class="checkbox-label">iFood</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="estoque">
+                    <span class="checkbox-icon">📦</span>
+                    <span class="checkbox-label">Estoque</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="financeiro">
+                    <span class="checkbox-icon">💰</span>
+                    <span class="checkbox-label">Financeiro</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="fidelidade">
+                    <span class="checkbox-icon">🎁</span>
+                    <span class="checkbox-label">Fidelidade</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="reservas">
+                    <span class="checkbox-icon">📅</span>
+                    <span class="checkbox-label">Reservas</span>
+                    <span class="checkbox-check"></span>
+                </label>
+                
+                <label class="checkbox-item" onclick="toggleCheck(this)">
+                    <input type="checkbox" data-module="dashboard">
+                    <span class="checkbox-icon">📊</span>
+                    <span class="checkbox-label">Dashboard</span>
+                    <span class="checkbox-check"></span>
+                </label>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">← Voltar</button>
+                <button class="btn" onclick="nextStep()">Próximo →</button>
+            </div>
+        </div>
+        
+        <!-- STEP 3: Integrações -->
+        <div class="step" data-step="3">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <span class="step-title">Integrações (Opcional)</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">API Key iFood (opicional)</label>
+                <input type="text" class="form-input" id="ifood-key" placeholder="Cole a API key do iFood">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">WhatsApp Webhook URL (opicional)</label>
+                <input type="text" class="form-input" id="whatsapp-webhook" placeholder="https://...">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">← Voltar</button>
+                <button class="btn" onclick="nextStep()">Próximo →</button>
+            </div>
+        </div>
+        
+        <!-- STEP 4: Dados Demo -->
+        <div class="step" data-step="4">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <span class="step-title">Dados Iniciais</span>
+            </div>
+            
+            <label class="checkbox-item selected" onclick="toggleCheck(this)" style="margin-bottom: 20px;">
+                <input type="checkbox" id="criar-demo" checked>
+                <span class="checkbox-icon">📦</span>
+                <span class="checkbox-label">Criar dados de exemplo</span>
+                <span class="checkbox-check"></span>
+            </label>
+            
+            <p style="color: var(--text-muted); font-size: 14px;">
+                Criará categorias, produtos, mesas e cupons de exemplo para você testar o sistema.
+            </p>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">← Voltar</button>
+                <button class="btn" onclick="finalizarSetup()">Finalizar Setup</button>
+            </div>
+        </div>
+        
+        <!-- FINAL -->
+        <div class="step" data-step="final">
+            <div class="final-screen">
+                <div class="final-icon">🎉</div>
+                <div class="final-title">Setup Concluído!</div>
+                <div class="final-subtitle">Seu BarFlow está pronto para usar.</div>
+                
+                <div class="features-list">
+                    <h3>Módulos ativados:</h3>
+                    <ul id="activated-modules"></ul>
+                </div>
+                
+                <button class="btn" onclick="location.href='menu.html'">Acessar Sistema</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        function toggleCheck(el) {
+            el.classList.toggle('selected');
+            const input = el.querySelector('input');
+            input.checked = el.classList.contains('selected');
+        }
+        
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+        
+        function updateProgress() {
+            document.querySelectorAll('.progress-step').forEach((el, i) => {
+                el.classList.toggle('active', i < currentStep);
+            });
+        }
+        
+        function nextStep() {
+            if (currentStep === 1) {
+                const nome = document.getElementById('empresa-nome').value;
+                if (!nome) {
+                    showAlert('Preencha o nome do estabelecimento', 'error');
+                    return;
+                }
+            }
+            
+            if (currentStep < totalSteps) {
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep++;
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep--;
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+            }
+        }
+        
+        async function finalizarSetup() {
+            const empresa = {
+                nome: document.getElementById('empresa-nome').value,
+                cnpj: document.getElementById('empresa-cnpj').value,
+                telefone: document.getElementById('empresa-telefone').value,
+                endereco: document.getElementById('empresa-endereco').value
+            };
+            
+            const modulos = [];
+            document.querySelectorAll('.checkbox-item.selected input[data-module]').forEach(el => {
+                modulos.push(el.dataset.module);
+            });
+            
+            const criarDemo = document.getElementById('criar-demo').checked;
+            
+            try {
+                await fetch(API_BASE + '/setup/inicial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ empresa, modulos })
+                });
+                
+                if (criarDemo) {
+                    await fetch(API_BASE + '/seed', { method: 'POST' });
+                }
+                
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep = 'final';
+                document.querySelector('.step[data-step="final"]').classList.add('active');
+                
+                const modulesList = document.getElementById('activated-modules');
+                modulesList.innerHTML = modulos.map(m => `<li>✓ ${m}</li>`).join('');
+                
+            } catch (e) {
+                showAlert('Erro ao salvar configuração', 'error');
+            }
+        }
+        
+        updateProgress();
+    </script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FF6B35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>BarFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle fill='%23FF6B35' cx='50' cy='50' r='45'/><text x='50' y='65' font-size='45' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>B</text></svg>">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --brand-orange: #FF8C00;
+            --accent: #00D9FF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --background: #1a1a2e;
+            --surface: #252542;
+            --surface-light: #303050;
+            --text: #FFFFFF;
+            --text-muted: #9E9EB8;
+            --border: #3D3D5C;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--background); color: var(--text); min-height: 100vh; user-select: none; }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            grid-template-rows: 60px 1fr 60px;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, var(--primary), var(--brand-orange));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 38px; height: 38px; background: white; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 900; color: var(--primary);
+        }
+        .logo-text { font-size: 22px; font-weight: 800; color: white; letter-spacing: 1px; }
+        
+        .header-info { display: flex; align-items: center; gap: 20px; color: white; font-size: 14px; font-weight: 500; }
+        .operator-info { background: rgba(0,0,0,0.2); padding: 8px 16px; border-radius: 8px; }
+        
+        .sidebar {
+            background: var(--surface); padding: 12px; overflow-y: auto; border-right: 1px solid var(--border);
+        }
+        .sidebar-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;
+        }
+        .menu-item {
+            width: 100%; padding: 14px 16px; background: var(--surface-light);
+            border: none; border-radius: 12px; color: var(--text);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            margin-bottom: 8px; transition: all 0.2s; text-align: left;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .menu-item:hover { background: var(--border); transform: translateX(3px); }
+        .menu-item.active { background: var(--primary); color: white; }
+        .menu-item .icon { font-size: 20px; }
+        
+        .main-content {
+            padding: 15px; overflow-y: auto; background: var(--background);
+        }
+        
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--surface); border-radius: 15px; padding: 20px;
+            text-align: center; border: 1px solid var(--border);
+        }
+        .stat-card:nth-child(1) .stat-value { color: var(--success); }
+        .stat-card:nth-child(2) .stat-value { color: var(--accent); }
+        .stat-card:nth-child(3) .stat-value { color: var(--warning); }
+        .stat-card:nth-child(4) .stat-value { color: var(--primary); }
+        .stat-value { font-size: 32px; font-weight: 800; }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+        
+        .section-title {
+            font-size: 18px; font-weight: 700; margin-bottom: 15px; color: var(--text);
+        }
+        
+        .menu-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+        }
+        .menu-card {
+            background: var(--surface); border-radius: 15px; padding: 20px;
+            text-align: center; border: 2px solid transparent;
+            transition: all 0.2s; cursor: pointer;
+        }
+        .menu-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .menu-card:active { transform: scale(0.97); }
+        .menu-card.featured { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+        .menu-card .card-icon { font-size: 40px; margin-bottom: 10px; }
+        .menu-card .card-title { font-size: 15px; font-weight: 700; }
+        
+        .footer {
+            grid-column: 1 / -1;
+            background: var(--surface); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 20px;
+            border-top: 1px solid var(--border);
+        }
+        .footer-left { font-size: 12px; color: var(--text-muted); }
+        .version { font-size: 11px; color: var(--text-muted); }
+        
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--surface); padding: 10px 15px;
+            display: flex; justify-content: space-around;
+            border-top: 1px solid var(--border);
+        }
+        .nav-item {
+            flex: 1; text-align: center; padding: 10px;
+            color: var(--text-muted); text-decoration: none;
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 11px; font-weight: 600;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        
+        @media (min-width: 768px) {
+            .bottom-nav { display: none; }
+            .app-container { grid-template-columns: 200px 1fr 200px; }
+            .sidebar-right { background: var(--surface); padding: 15px; }
+        }
+        
+        @media (max-width: 767px) {
+            .app-container { display: block; padding-bottom: 70px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo-area">
+                <div class="logo-icon">B</div>
+                <div>
+                    <div class="logo-text">BarFlow</div>
+                </div>
+            </div>
+            <div class="header-info">
+                <span id="clock">--:--</span>
+                <div class="operator-info">Admin</div>
+            </div>
+        </header>
+        
+        <nav class="sidebar">
+            <div class="sidebar-title">Menu</div>
+            <button class="menu-item active" onclick="location.href='menu.html'">
+                <span class="icon">🏠</span> Início
+            </button>
+            <button class="menu-item" onclick="location.href='pdv.html'">
+                <span class="icon">🛒</span> PDV
+            </button>
+            <button class="menu-item" onclick="location.href='kds.html'">
+                <span class="icon">👨‍🍳</span> Cozinha
+            </button>
+            <button class="menu-item" onclick="location.href='mesas.html'">
+                <span class="icon">🪑</span> Mesas
+            </button>
+            <button class="menu-item" onclick="location.href='garcom.html'">
+                <span class="icon">🍽️</span> Garçom
+            </button>
+            <button class="menu-item" onclick="location.href='cardapio-digital.html'">
+                <span class="icon">📱</span> Cardápio
+            </button>
+            <button class="menu-item" onclick="location.href='delivery.html'">
+                <span class="icon">🛵</span> Delivery
+            </button>
+            <button class="menu-item" onclick="location.href='ifood-hub.html'">
+                <span class="icon">🍔</span> iFood
+            </button>
+            <button class="menu-item" onclick="location.href='reservas.html'">
+                <span class="icon">📅</span> Reservas
+            </button>
+            <button class="menu-item" onclick="location.href='dashboard-bi.html'">
+                <span class="icon">📊</span> Relatórios
+            </button>
+            <button class="menu-item" onclick="location.href='estoque.html'">
+                <span class="icon">📦</span> Estoque
+            </button>
+            <button class="menu-item" onclick="location.href='login.html'">
+                <span class="icon">⚙️</span> Config
+            </button>
+        </nav>
+        
+        <main class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="pedidos-hoje">--</div>
+                    <div class="stat-label">Pedidos Hoje</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="faturamento-hoje">--</div>
+                    <div class="stat-label">Faturamento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="mesas-livres">--</div>
+                    <div class="stat-label">Mesas Livres</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="ticket-medio">--</div>
+                    <div class="stat-label">Ticket Médio</div>
+                </div>
+            </div>
+            
+            <div class="section-title">Acesso Rápido</div>
+            <div class="menu-grid" id="menu-grid">
+            </div>
+                </div>
+                <div class="menu-card" onclick="location.href='ifood-hub.html'">
+                    <div class="card-icon">🍔</div>
+                    <div class="card-title">iFood</div>
+                </div>
+                <div class="menu-card" onclick="location.href='dashboard-bi.html'">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Dashboard</div>
+                </div>
+                <div class="menu-card" onclick="location.href='estoque.html'">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">Estoque</div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <div class="footer-left">Desenvolvido por 4dotcom</div>
+            <div class="version">v1.0.0</div>
+        </footer>
+    </div>
+    
+    <nav class="bottom-nav">
+        <a href="menu.html" class="nav-item active">
+            <span class="nav-icon">🏠</span>Início
+        </a>
+        <a href="mesas.html" class="nav-item">
+            <span class="nav-icon">🪑</span>Mesas
+        </a>
+        <a href="pdv.html" class="nav-item">
+            <span class="nav-icon">🛒</span>PDV
+        </a>
+        <a href="dashboard-bi.html" class="nav-item">
+            <span class="nav-icon">📊</span>BI
+        </a>
+        <a href="menu.html" class="nav-item">
+            <span class="nav-icon">☰</span>Mais
+        </a>
+    </nav>
+    
+    <script>
+        const API_BASE = '/api';
+        let config = { modulos: ['pdv', 'mesas', 'kds', 'dashboard'] };
+        
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        async function loadConfig() {
+            try {
+                const res = await fetch(API_BASE + '/config');
+                const data = await res.json();
+                if (data.modulos) {
+                    config = { modulos: JSON.parse(data.modulos) };
+                }
+                renderModulos();
+            } catch(e) {
+                renderModulos();
+            }
+        }
+        
+        function renderModulos() {
+            const modules = [
+                { id: 'pdv', icon: '🛒', name: 'PDV', file: 'pdv.html' },
+                { id: 'mesas', icon: '🪑', name: 'Mesas', file: 'mesas.html' },
+                { id: 'kds', icon: '👨‍🍳', name: 'Cozinha', file: 'kds.html' },
+                { id: 'garcom', icon: '🍽️', name: 'Garçom', file: 'garcom.html' },
+                { id: 'cardapio', icon: '📱', name: 'Cardápio', file: 'cardapio-digital.html' },
+                { id: 'delivery', icon: '🛵', name: 'Delivery', file: 'delivery-hub.html' },
+                { id: 'ifood', icon: '🍔', name: 'iFood', file: 'ifood-hub.html' },
+                { id: 'estoque', icon: '📦', name: 'Estoque', file: 'estoque.html' },
+                { id: 'financeiro', icon: '💰', name: 'Financeiro', file: 'dashboard-bi.html' },
+                { id: 'fidelidade', icon: '🎁', name: 'Fidelidade', file: 'crm-fidelidade.html' },
+                { id: 'reservas', icon: '📅', name: 'Reservas', file: 'reservas.html' },
+                { id: 'dashboard', icon: '📊', name: 'Dashboard', file: 'dashboard-bi.html' }
+            ];
+            
+            const grid = document.getElementById('menu-grid');
+            const active = config.modulos || ['pdv', 'mesas', 'kds', 'dashboard'];
+            
+            grid.innerHTML = modules
+                .filter(m => active.includes(m.id))
+                .map(m => `
+                    <div class="menu-card ${m.id === 'pdv' ? 'featured' : ''}" onclick="location.href='${m.file}'">
+                        <div class="card-icon">${m.icon}</div>
+                        <div class="card-title">${m.name}</div>
+                    </div>
+                `).join('');
+        }
+        
+        async function loadDashboard() {
+            try {
+                const res = await fetch(API_BASE + '/dashboard');
+                const data = await res.json();
+                document.getElementById('pedidos-hoje').textContent = data.pedidos_hoje || 0;
+                document.getElementById('faturamento-hoje').textContent = 'R$' + (data.faturamento_hoje || 0).toFixed(0);
+                document.getElementById('mesas-livres').textContent = data.mesas_disponiveis || '--';
+                document.getElementById('ticket-medio').textContent = 'R$' + (data.ticket_medio || 0).toFixed(0);
+            } catch(e) {
+                console.log('API offline');
+            }
+        }
+        
+        loadConfig();
+        loadDashboard();
+    </script>
+</body>
+</html>
