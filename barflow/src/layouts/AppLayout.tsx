@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/authStore';
+import { ThemeToggle } from '../components/ThemeProvider';
 import {
   ShoppingCart,
   UtensilsCrossed,
@@ -57,9 +58,9 @@ export function AppLayout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-bar-dark">
+    <div className="flex h-screen bg-gray-100 dark:bg-bar-dark">
       <aside
-        className={`bg-bar-darker border-r border-gray-800 transition-all duration-300 flex flex-col ${
+        className={`bg-white dark:bg-bar-darker border-r border-gray-200 dark:border-gray-800 transition-all duration-300 flex flex-col ${
           collapsed ? 'w-16' : 'w-64'
         }`}
       >
@@ -67,12 +68,15 @@ export function AppLayout({ children }: LayoutProps) {
           {!collapsed && (
             <h1 className="text-xl font-bold text-primary-500">BarFlow</h1>
           )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            {collapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              {collapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4">
@@ -90,7 +94,7 @@ export function AppLayout({ children }: LayoutProps) {
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                       isActive
                         ? 'bg-primary-500/20 text-primary-500'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     <item.icon size={20} />
@@ -118,7 +122,7 @@ export function AppLayout({ children }: LayoutProps) {
           </div>
           <button
             onClick={handleLogout}
-            className={`mt-3 w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors ${
+            className={`mt-3 w-full flex items-center gap-3 px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors ${
               collapsed ? 'justify-center' : ''
             }`}
           >
