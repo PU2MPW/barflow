@@ -1,8 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
+  "buildCommand": "cd barflow && npm run build",
+  "outputDirectory": "barflow/dist",
+  "installCommand": "cd barflow && npm install",
   "framework": "vite",
+  "rootDirectory": "barflow",
   "routes": [
     {
       "handle": "filesystem"
