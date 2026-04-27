@@ -7,11 +7,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'light') {
-      root.classList.add('light');
       root.classList.remove('dark');
+      root.classList.add('light');
     } else {
-      root.classList.add('dark');
       root.classList.remove('light');
+      root.classList.add('dark');
     }
   }, [theme]);
 
@@ -24,7 +24,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-yellow-400 light:text-yellow-600 hover:bg-gray-700 light:hover:bg-gray-300 transition-colors"
+      className="p-2 rounded-lg transition-colors dark:bg-gray-800 dark:text-yellow-400 dark:hover:bg-gray-700 bg-gray-200 text-yellow-700 hover:bg-gray-300"
       title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
     >
       {theme === 'dark' ? (
