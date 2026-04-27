@@ -1,8 +1,8 @@
 {
-  "buildCommand": "echo 'Static build - no build needed'",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "echo 'No install needed'",
-  "framework": null,
+  "installCommand": "npm install",
+  "framework": "vite",
   "routes": [
     {
       "handle": "filesystem"
