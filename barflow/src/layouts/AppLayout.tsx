@@ -66,7 +66,7 @@ export function AppLayout({ children }: LayoutProps) {
       >
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           {!collapsed && (
-            <h1 className="text-xl font-bold text-primary-500">BarFlow</h1>
+            <h1 className="text-xl font-bold text-primary-500">BarFlow II</h1>
           )}
           <div className="flex items-center gap-2">
             <ThemeToggle />
