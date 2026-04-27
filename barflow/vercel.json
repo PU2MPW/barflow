@@ -1,0 +1,15 @@
+{
+  "buildCommand": "echo 'Static build - no build needed'",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'No install needed'",
+  "framework": null,
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
